@@ -17,7 +17,7 @@ export function Header() {
   };
 
   return (
-    <div className="bg-white shadow-sm border-b sticky top-0 z-10">
+    <div className="bg-white shadow-sm border-b sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <Link href="/" className="text-2xl font-bold text-indigo-600 hover:text-indigo-700 transition">
           📚 Quizzy
@@ -37,7 +37,7 @@ export function Header() {
               </button>
 
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
                   <Link
                     href="/profile"
                     className="block px-4 py-2 hover:bg-gray-100 text-gray-700"
