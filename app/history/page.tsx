@@ -13,6 +13,7 @@ interface QuizAttempt {
     description: string;
     difficulty: string;
     totalPoints: number;
+    questionIds?: any[];
   };
   totalScore: number;
   isPassed: boolean;
@@ -23,20 +24,25 @@ interface QuizAttempt {
 
 export default function HistoryPage() {
   const router = useRouter();
-  const { token } = useAuth();
+  const { token, loading: authLoading } = useAuth();
   const [attempts, setAttempts] = useState<QuizAttempt[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Wait for auth to finish loading
+    if (authLoading) {
+      return;
+    }
+
+    if (!token) {
+      setError('Vui lòng đăng nhập');
+      setLoading(false);
+      return;
+    }
+
     const fetchAttempts = async () => {
       try {
-        if (!token) {
-          setError('Vui lòng đăng nhập');
-          setLoading(false);
-          return;
-        }
-
         const headers: HeadersInit = {
           'Authorization': `Bearer ${token}`,
         };
@@ -62,7 +68,7 @@ export default function HistoryPage() {
     };
 
     fetchAttempts();
-  }, [token]);
+  }, [token, authLoading]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -119,6 +125,11 @@ export default function HistoryPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto"></div>
             <p className="text-gray-400 mt-4">Đang tải...</p>
           </div>
+        ) : authLoading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto"></div>
+            <p className="text-gray-400 mt-4">Đang xác thực...</p>
+          </div>
         ) : error ? (
           <div className="bg-red-500/20 border border-red-500 rounded-lg p-6 text-red-200">
             {error}
@@ -136,7 +147,9 @@ export default function HistoryPage() {
         ) : (
           <div className="space-y-4">
             {attempts.map((attempt) => {
-              const percentage = calculatePercentage(attempt.totalScore, attempt.quizId.totalPoints);
+              // Calculate actual max points from questions like the result page does
+              const actualMaxPoints = attempt.quizId.questionIds?.reduce((sum: number, q: any) => sum + (q.points || 0), 0) || attempt.quizId.totalPoints || 0;
+              const percentage = calculatePercentage(attempt.totalScore, actualMaxPoints);
               const statusColor = attempt.isPassed
                 ? 'bg-green-500/10 border-green-500/30'
                 : 'bg-red-500/10 border-red-500/30';
@@ -176,7 +189,7 @@ export default function HistoryPage() {
                     <div>
                       <p className="text-gray-400 text-xs">Điểm</p>
                       <p className="text-white font-semibold">
-                        {attempt.totalScore}/{attempt.quizId.totalPoints}
+                        {attempt.totalScore}/{actualMaxPoints}
                       </p>
                     </div>
                     <div>

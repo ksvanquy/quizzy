@@ -88,11 +88,52 @@ export async function GET(request: NextRequest) {
       const skip = (page - 1) * limit;
 
       const attempts = await Attempt.find({ userId: payload.userId })
-        .populate('quizId')
         .populate('userId', 'username name')
         .skip(skip)
         .limit(limit)
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .lean() as any[];
+
+      // Populate quiz data with questions for each attempt
+      for (let attempt of attempts) {
+        if (attempt.quizId) {
+          const quiz = await Quiz.findById(attempt.quizId).lean() as any;
+          if (quiz && quiz.questionIds) {
+            // Fetch all questions from all collections
+            const [regularQuestions, fillBlanks, numericInputs, orderings, matchings] = await Promise.all([
+              Question.find({ _id: { $in: quiz.questionIds } }).lean(),
+              FillBlank.find({ _id: { $in: quiz.questionIds } }).lean(),
+              NumericInput.find({ _id: { $in: quiz.questionIds } }).lean(),
+              Ordering.find({ _id: { $in: quiz.questionIds } }).lean(),
+              Matching.find({ _id: { $in: quiz.questionIds } }).lean(),
+            ]);
+
+            const allQuestions = [...regularQuestions, ...fillBlanks, ...numericInputs, ...orderings, ...matchings];
+
+            // Map questions and add type field
+            const mappedQuestions = quiz.questionIds.map((qId: any) => {
+              const question = allQuestions.find((q: any) => q._id.toString() === qId.toString());
+              if (!question) return null;
+
+              if (!question.type) {
+                if (fillBlanks.some((q: any) => q._id.toString() === qId.toString())) {
+                  question.type = 'fill_blank';
+                } else if (numericInputs.some((q: any) => q._id.toString() === qId.toString())) {
+                  question.type = 'numeric_input';
+                } else if (orderings.some((q: any) => q._id.toString() === qId.toString())) {
+                  question.type = 'ordering';
+                } else if (matchings.some((q: any) => q._id.toString() === qId.toString())) {
+                  question.type = 'matching';
+                }
+              }
+              return question;
+            }).filter(Boolean);
+
+            quiz.questionIds = mappedQuestions;
+            attempt.quizId = quiz;
+          }
+        }
+      }
 
       const total = await Attempt.countDocuments({ userId: payload.userId });
 

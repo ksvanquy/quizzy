@@ -107,6 +107,13 @@ export default function QuizAttemptPage() {
   };
 
   const handleSubmit = async () => {
+    // Show confirmation dialog
+    const confirmed = window.confirm('Bạn chắc chắn muốn nộp bài? Bạn không thể thay đổi câu trả lời sau khi nộp.');
+    
+    if (!confirmed) {
+      return; // User cancelled
+    }
+
     setIsSubmitted(true);
     setIsSubmitting(true);
     
