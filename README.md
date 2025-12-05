@@ -87,32 +87,62 @@ app/
 4. Gửi bài khi hoàn thành
 
 ### Sử Dụng Bookmark
-1. Trên trang chi tiết bài thi, nhấn nút "☆ Lưu"
-2. Nút sẽ đổi thành "⭐ Đã lưu"
+1. Trên trang chủ hoặc trang chi tiết bài thi, nhấn nút "☆ Lưu"
+2. Nút sẽ đổi thành "⭐ Đã lưu" với nền vàng
 3. Xem danh sách bài thi đã lưu từ menu người dùng → "⭐ Bài thi đã lưu"
+4. Nhấn "Xem chi tiết" để xem lại bài thi
 
 ### Sử Dụng Watchlist
-1. Trên trang chi tiết bài thi, nhấn nút "👁 Theo dõi"
-2. Nút sẽ đổi thành "👁 Đang theo dõi"
+1. Trên trang chủ hoặc trang chi tiết bài thi, nhấn nút "👁 Theo dõi"
+2. Nút sẽ đổi thành "👁 Đang theo dõi" với nền xanh
 3. Xem danh sách bài thi đang theo dõi từ menu người dùng → "👁 Đang theo dõi"
+4. Nhấn "Xem chi tiết" để xem lại bài thi
+
+### Xem Lịch Sử Làm Bài
+1. Từ menu người dùng, chọn "📝 Lịch sử làm bài"
+2. Xem danh sách tất cả các bài thi đã hoàn thành
+3. Hiển thị tỷ lệ hoàn thành (%), điểm số, trạng thái vượt qua
+4. Nhấn "Xem chi tiết →" để xem kết quả chi tiết của lần làm bài đó
 
 ## 📊 Kết Quả Bài Thi
 
 Sau khi gửi bài, người dùng sẽ thấy:
-- Tỷ lệ % hoàn thành chính xác
+- Tỷ lệ % hoàn thành chính xác (tính từ điểm đạt được / tổng điểm)
 - Số điểm đạt được / tổng điểm
-- Thời gian hoàn thành
+- Thời gian hoàn thành bài thi
+- Trạng thái: Vượt qua ✓ hoặc Không vượt qua ✗
 - Chi tiết từng câu hỏi với:
   - Đáp án của bạn
   - Đáp án đúng
-  - Điểm nhận được
-  - Giải thích (nếu có)
+  - Điểm nhận được cho câu đó
+  - Loại câu hỏi (Single Choice, Multiple Choice, True/False, Fill Blank, Numeric Input, Ordering, Matching)
 
 ## 🔐 Bảo Mật
 
 - Xác thực người dùng với token JWT
 - Bảo vệ API endpoints bằng middleware auth
 - Dữ liệu người dùng được mã hóa
+- Menu người dùng luôn hiển thị trên cùng (z-index cao nhất)
+
+## 📱 Giao Diện Người Dùng
+
+### Menu Người Dùng
+Khi click vào menu người dùng (👤), bạn sẽ thấy các tùy chọn:
+- 👤 Hồ sơ - Xem và quản lý thông tin cá nhân
+- 📝 Lịch sử làm bài - Xem tất cả các bài thi đã làm
+- ⭐ Bài thi đã lưu - Quản lý các bài thi đã bookmark
+- 👁 Đang theo dõi - Quản lý các bài thi đang theo dõi
+- 🚪 Đăng xuất - Đăng xuất khỏi hệ thống
+
+### Giao Diện Trang Chủ
+- Danh mục bài thi (Categories) với layout 2 hàng: Danh mục cha - Danh mục con
+- Hiển thị các bài thi dưới dạng thẻ (Card) với:
+  - Tiêu đề bài thi
+  - Mô tả ngắn gọn
+  - Độ khó (Dễ/Trung bình/Khó)
+  - Thông tin: Thời gian, Điểm, Điểm cần đạt
+  - Nút "Bắt Đầu Thi"
+  - Icon bookmark và watchlist (có thể bấm để lưu/theo dõi ngay từ trang chủ)
 
 ## 📝 Commit & Deployment
 
@@ -125,5 +155,21 @@ git push
 
 ---
 
-**Phiên bản hiện tại:** 1.1.0  
-**Cập nhật lần cuối:** December 2025
+## 📋 Tổng Hợp Chức Năng
+
+| Chức Năng | Mô Tả | Trạng Thái |
+|-----------|-------|-----------|
+| Hệ thống 7 loại câu hỏi | Single Choice, Multiple Choice, True/False, Fill Blank, Numeric Input, Ordering, Matching | ✅ Hoàn thành |
+| Quản lý bài thi | Tạo, sửa, xoá bài thi | ✅ Hoàn thành |
+| Trải nghiệm làm bài | Timer, navigation, auto-save answers | ✅ Hoàn thành |
+| Chấm điểm tự động | Scoring cho tất cả 7 loại | ✅ Hoàn thành |
+| Hiển thị kết quả | Chi tiết điểm, thời gian, so sánh đáp án | ✅ Hoàn thành |
+| Bookmark & Watchlist | Lưu và theo dõi bài thi | ✅ Hoàn thành |
+| Lịch sử làm bài | Xem lại tất cả attempts | ✅ Hoàn thành |
+| Xác thực JWT | Login/Register | ✅ Hoàn thành |
+
+---
+
+**Phiên bản hiện tại:** 1.2.0  
+**Cập nhật lần cuối:** December 5, 2025  
+**Status:** Production Ready ✅
