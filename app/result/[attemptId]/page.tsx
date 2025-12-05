@@ -113,9 +113,15 @@ export default function ResultPage() {
   }
 
   const quiz = attempt.quizId as any;
-  const percentage = quiz?.totalPoints ? Math.round((attempt.totalScore / quiz.totalPoints) * 100) : 0;
+  
+  // Calculate actual max points from questions
+  const actualMaxPoints = quiz?.questionIds?.reduce((sum: number, q: any) => sum + (q.points || 0), 0) || quiz?.totalPoints || 0;
+  
+  // Calculate percentage based on actual max points
+  const percentage = actualMaxPoints ? Math.round((attempt.totalScore / actualMaxPoints) * 100) : 0;
+  
   const timeSpent = attempt.submittedAt && attempt.startedAt 
-    ? Math.floor((new Date(attempt.submittedAt).getTime() - new Date(attempt.startedAt).getTime()) / 1000)
+    ? Math.max(0, Math.floor((new Date(attempt.submittedAt).getTime() - new Date(attempt.startedAt).getTime()) / 1000))
     : 0;
   const minutes = Math.floor(timeSpent / 60);
   const seconds = timeSpent % 60;
@@ -236,7 +242,7 @@ export default function ResultPage() {
               <p className="text-sm font-semibold opacity-90 mb-2">KẾT QUẢ</p>
               <div className="text-6xl font-bold mb-2">{percentage}%</div>
               <p className="text-2xl font-semibold mb-4">
-                {attempt.totalScore}/{quiz?.totalPoints || 0} điểm
+                {attempt.totalScore}/{actualMaxPoints} điểm
               </p>
               <div className="text-lg">
                 {attempt.isPassed ? (

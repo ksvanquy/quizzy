@@ -201,6 +201,7 @@ export async function POST(request: NextRequest) {
         totalScore,
         isPassed,
         status: 'graded',
+        startedAt: body.startedAt ? new Date(body.startedAt) : new Date(),
         submittedAt: new Date(),
       });
 

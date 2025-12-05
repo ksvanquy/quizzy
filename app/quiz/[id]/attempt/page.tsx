@@ -38,6 +38,7 @@ export default function QuizAttemptPage() {
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [startedAt] = useState(new Date());
 
   useEffect(() => {
     if (!quizId) return;
@@ -121,6 +122,7 @@ export default function QuizAttemptPage() {
         body: JSON.stringify({
           quizId,
           answers,
+          startedAt: startedAt.toISOString(),
         }),
       });
 
