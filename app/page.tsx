@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Header } from './components/home/Header';
 import { CategoryNav } from './components/home/CategoryNav';
 import { QuizCard } from './components/home/QuizCard';
+import { useAuth } from '@/lib/contexts/AuthContext';
 
 interface Category {
   _id: string;
@@ -17,8 +18,11 @@ interface Category {
 }
 
 export default function HomePage() {
+  const { token } = useAuth();
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [quizzes, setQuizzes] = useState<any[]>([]);
+  const [bookmarks, setBookmarks] = useState<string[]>([]);
+  const [watchlist, setWatchlist] = useState<string[]>([]);
   const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,6 +42,31 @@ export default function HomePage() {
           setQuizzes(quizzesData.data?.quizzes || quizzesData.data || []);
         }
 
+        // Fetch bookmarks and watchlist if authenticated
+        if (token) {
+          const headers: HeadersInit = {
+            'Authorization': `Bearer ${token}`,
+          };
+
+          const bookmarksRes = await fetch('/api/bookmarks', { headers });
+          if (bookmarksRes.ok) {
+            const bookmarksData = await bookmarksRes.json();
+            const bookmarkIds = (bookmarksData.data?.bookmarks || []).map((b: any) => 
+              typeof b.quizId === 'string' ? b.quizId : b.quizId?._id
+            );
+            setBookmarks(bookmarkIds);
+          }
+
+          const watchlistRes = await fetch('/api/watchlist', { headers });
+          if (watchlistRes.ok) {
+            const watchlistData = await watchlistRes.json();
+            const watchlistIds = (watchlistData.data?.watchlist || []).map((w: any) => 
+              typeof w.quizId === 'string' ? w.quizId : w.quizId?._id
+            );
+            setWatchlist(watchlistIds);
+          }
+        }
+
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -45,7 +74,7 @@ export default function HomePage() {
       }
     }
     fetchData();
-  }, []);
+  }, [token]);
 
   // Separate parent and child categories
   const parentCategories = allCategories.filter(cat => cat.parentId === null);
@@ -124,7 +153,26 @@ export default function HomePage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
               {filteredQuizzes.map(quiz => (
-                <QuizCard key={quiz._id} quiz={quiz} />
+                <QuizCard 
+                  key={quiz._id} 
+                  quiz={quiz} 
+                  isBookmarked={bookmarks.includes(quiz._id)}
+                  isInWatchlist={watchlist.includes(quiz._id)}
+                  onBookmarkChange={(isBookmarked) => {
+                    if (isBookmarked) {
+                      setBookmarks(prev => [...prev, quiz._id]);
+                    } else {
+                      setBookmarks(prev => prev.filter(id => id !== quiz._id));
+                    }
+                  }}
+                  onWatchlistChange={(isInWatchlist) => {
+                    if (isInWatchlist) {
+                      setWatchlist(prev => [...prev, quiz._id]);
+                    } else {
+                      setWatchlist(prev => prev.filter(id => id !== quiz._id));
+                    }
+                  }}
+                />
               ))}
             </div>
           </>

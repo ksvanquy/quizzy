@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Header } from '@/app/components/home/Header';
+import { useBookmarkWatchlist } from '@/app/hooks/useBookmarkWatchlist';
+import { useAuth } from '@/lib/contexts/AuthContext';
 
 interface QuizDetail {
   _id: string;
@@ -21,9 +23,14 @@ export default function QuizDetailPage() {
   const params = useParams();
   const router = useRouter();
   const quizId = params?.id as string;
+  const { token } = useAuth();
+  const { toggleBookmark, toggleWatchlist, loading: actionLoading } = useBookmarkWatchlist();
+  
   const [quiz, setQuiz] = useState<QuizDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isInWatchlist, setIsInWatchlist] = useState(false);
 
   useEffect(() => {
     if (!quizId) return;
@@ -44,6 +51,44 @@ export default function QuizDetailPage() {
 
     fetchQuiz();
   }, [quizId]);
+
+  // Fetch bookmark/watchlist status
+  useEffect(() => {
+    if (!quizId || !token) return;
+
+    const fetchStatus = async () => {
+      try {
+        const headers: HeadersInit = {
+          'Authorization': `Bearer ${token}`,
+        };
+
+        const [bookmarksRes, watchlistRes] = await Promise.all([
+          fetch('/api/bookmarks', { headers }),
+          fetch('/api/watchlist', { headers }),
+        ]);
+
+        if (bookmarksRes.ok) {
+          const bookmarksData = await bookmarksRes.json();
+          const bookmarkIds = (bookmarksData.data?.bookmarks || []).map((b: any) => 
+            typeof b.quizId === 'string' ? b.quizId : b.quizId?._id
+          );
+          setIsBookmarked(bookmarkIds.includes(quizId));
+        }
+
+        if (watchlistRes.ok) {
+          const watchlistData = await watchlistRes.json();
+          const watchlistIds = (watchlistData.data?.watchlist || []).map((w: any) => 
+            typeof w.quizId === 'string' ? w.quizId : w.quizId?._id
+          );
+          setIsInWatchlist(watchlistIds.includes(quizId));
+        }
+      } catch (err) {
+        console.error('Error fetching bookmark/watchlist status:', err);
+      }
+    };
+
+    fetchStatus();
+  }, [quizId, token]);
 
   if (loading) {
     return (
@@ -120,8 +165,33 @@ export default function QuizDetailPage() {
             >
               Bắt Đầu Thi →
             </button>
-            <button className="px-6 py-3 border border-indigo-500/30 hover:bg-indigo-500/10 text-indigo-200 rounded-lg font-semibold transition">
-              Thêm vào Watchlist
+            <button 
+              onClick={async () => {
+                const newState = await toggleBookmark(quizId, isBookmarked);
+                setIsBookmarked(newState);
+              }}
+              disabled={actionLoading}
+              className={`px-6 py-3 border rounded-lg font-semibold transition ${
+                isBookmarked
+                  ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-200 hover:bg-yellow-500/30'
+                  : 'border-indigo-500/30 hover:bg-indigo-500/10 text-indigo-200'
+              } disabled:opacity-50`}
+            >
+              {actionLoading ? '...' : isBookmarked ? '⭐ Đã lưu' : '☆ Lưu'}
+            </button>
+            <button 
+              onClick={async () => {
+                const newState = await toggleWatchlist(quizId, isInWatchlist);
+                setIsInWatchlist(newState);
+              }}
+              disabled={actionLoading}
+              className={`px-6 py-3 border rounded-lg font-semibold transition ${
+                isInWatchlist
+                  ? 'bg-blue-500/20 border-blue-500/50 text-blue-200 hover:bg-blue-500/30'
+                  : 'border-indigo-500/30 hover:bg-indigo-500/10 text-indigo-200'
+              } disabled:opacity-50`}
+            >
+              {actionLoading ? '...' : isInWatchlist ? '👁 Đang theo dõi' : '👁 Theo dõi'}
             </button>
           </div>
         </div>

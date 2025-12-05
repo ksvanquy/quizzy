@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { useBookmarkWatchlist } from '@/app/hooks/useBookmarkWatchlist';
 
 interface QuizCardProps {
   quiz: {
@@ -12,6 +14,10 @@ interface QuizCardProps {
     totalPoints: number;
     passingScore: number;
   };
+  isBookmarked?: boolean;
+  isInWatchlist?: boolean;
+  onBookmarkChange?: (isBookmarked: boolean) => void;
+  onWatchlistChange?: (isInWatchlist: boolean) => void;
 }
 
 const getDifficultyBadge = (difficulty: string) => {
@@ -32,7 +38,35 @@ const getDifficultyBadge = (difficulty: string) => {
   );
 };
 
-export function QuizCard({ quiz }: QuizCardProps) {
+export function QuizCard({ quiz, isBookmarked = false, isInWatchlist = false, onBookmarkChange, onWatchlistChange }: QuizCardProps) {
+  const { toggleBookmark, toggleWatchlist, loading } = useBookmarkWatchlist();
+  const [localBookmarked, setLocalBookmarked] = useState(isBookmarked);
+  const [localWatchlist, setLocalWatchlist] = useState(isInWatchlist);
+
+  // Sync local state with props when they change
+  useEffect(() => {
+    setLocalBookmarked(isBookmarked);
+  }, [isBookmarked]);
+
+  useEffect(() => {
+    setLocalWatchlist(isInWatchlist);
+  }, [isInWatchlist]);
+
+  const handleBookmarkClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const newState = await toggleBookmark(quiz._id, localBookmarked);
+    setLocalBookmarked(newState);
+    onBookmarkChange?.(newState);
+  };
+
+  const handleWatchlistClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const newState = await toggleWatchlist(quiz._id, localWatchlist);
+    setLocalWatchlist(newState);
+    onWatchlistChange?.(newState);
+  };
   return (
     <Link href={`/quiz/${quiz._id}`}>
       <div className="group bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-200 hover:border-indigo-300 flex flex-col">
@@ -44,22 +78,44 @@ export function QuizCard({ quiz }: QuizCardProps) {
             {/* Bookmark & Watchlist Icons */}
             <div className="flex gap-1.5 flex-shrink-0">
               <button
-                onClick={(e) => e.preventDefault()}
-                className="p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition backdrop-blur-sm"
-                title="Thêm bookmark"
+                onClick={handleBookmarkClick}
+                disabled={loading}
+                className={`p-1.5 rounded-full transition backdrop-blur-sm disabled:opacity-50 ${
+                  localBookmarked
+                    ? 'bg-yellow-300/40 hover:bg-yellow-300/50'
+                    : 'bg-white/20 hover:bg-white/30'
+                }`}
+                title={localBookmarked ? 'Bỏ bookmark' : 'Thêm bookmark'}
               >
-                <svg className="w-4 h-4 stroke-white fill-none" viewBox="0 0 20 20" strokeWidth="2">
-                  <path d="M10 2l2.5 6.5L19 9l-5 4.5L15 20l-5-3.5L5 20l1-6.5L1 9l6.5-.5L10 2z" />
-                </svg>
+                {localBookmarked ? (
+                  <svg className="w-4 h-4 fill-yellow-300" viewBox="0 0 20 20">
+                    <path d="M10 2l2.5 6.5L19 9l-5 4.5L15 20l-5-3.5L5 20l1-6.5L1 9l6.5-.5L10 2z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 stroke-white fill-none" viewBox="0 0 20 20" strokeWidth="2">
+                    <path d="M10 2l2.5 6.5L19 9l-5 4.5L15 20l-5-3.5L5 20l1-6.5L1 9l6.5-.5L10 2z" />
+                  </svg>
+                )}
               </button>
               <button
-                onClick={(e) => e.preventDefault()}
-                className="p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition backdrop-blur-sm"
-                title="Thêm vào watchlist"
+                onClick={handleWatchlistClick}
+                disabled={loading}
+                className={`p-1.5 rounded-full transition backdrop-blur-sm disabled:opacity-50 ${
+                  localWatchlist
+                    ? 'bg-blue-300/40 hover:bg-blue-300/50'
+                    : 'bg-white/20 hover:bg-white/30'
+                }`}
+                title={localWatchlist ? 'Bỏ theo dõi' : 'Thêm vào watchlist'}
               >
-                <svg className="w-4 h-4 stroke-white fill-none" viewBox="0 0 20 20" strokeWidth="2">
-                  <path d="M10 18l-1.45-1.32C3.4 12.36 0 9.28 0 5.5 0 2.42 2.42 0 5.5 0c1.74 0 3.41.81 4.5 2.09C11.09.81 12.76 0 14.5 0 17.58 0 20 2.42 20 5.5c0 3.78-3.4 6.86-8.55 11.18L10 18z" />
-                </svg>
+                {localWatchlist ? (
+                  <svg className="w-4 h-4 fill-blue-300" viewBox="0 0 20 20">
+                    <path d="M10 18l-1.45-1.32C3.4 12.36 0 9.28 0 5.5 0 2.42 2.42 0 5.5 0c1.74 0 3.41.81 4.5 2.09C11.09.81 12.76 0 14.5 0 17.58 0 20 2.42 20 5.5c0 3.78-3.4 6.86-8.55 11.18L10 18z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 stroke-white fill-none" viewBox="0 0 20 20" strokeWidth="2">
+                    <path d="M10 18l-1.45-1.32C3.4 12.36 0 9.28 0 5.5 0 2.42 2.42 0 5.5 0c1.74 0 3.41.81 4.5 2.09C11.09.81 12.76 0 14.5 0 17.58 0 20 2.42 20 5.5c0 3.78-3.4 6.86-8.55 11.18L10 18z" />
+                  </svg>
+                )}
               </button>
             </div>
           </div>
