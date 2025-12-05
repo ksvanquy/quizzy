@@ -37,6 +37,12 @@
 - Quản lý các bài thi đã lưu từ trang riêng biệt
 - Xóa bỏ từ bookmark/watchlist một cách dễ dàng
 
+### 6. **Lịch Sử Làm Bài** ⭐ MỚI
+- Xem lại tất cả các bài thi đã làm
+- Hiển thị tỷ lệ hoàn thành, điểm số và trạng thái vượt qua
+- Xem chi tiết kết quả từng lần làm bài
+- Sắp xếp theo thời gian làm bài gần nhất
+
 ## 🚀 Công Nghệ Sử Dụng
 
 **Frontend:**
@@ -63,6 +69,7 @@ app/
 │   ├── page.tsx           # Quiz detail (với Bookmark/Watchlist)
 │   └── attempt/page.tsx   # Quiz taking interface
 ├── result/[attemptId]/    # Results page
+├── history/page.tsx       # 📝 Quiz attempts history page
 ├── bookmarks/page.tsx     # ⭐ Bookmarks list page
 ├── watchlist/page.tsx     # 👁 Watchlist page
 ├── components/            # Reusable components
