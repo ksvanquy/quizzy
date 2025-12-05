@@ -1,0 +1,145 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Header } from '@/app/components/home/Header';
+import { CategoryNav } from '@/app/components/home/CategoryNav';
+import { QuizCard } from '@/app/components/home/QuizCard';
+
+interface Category {
+  _id: string;
+  name: string;
+  slug: string;
+  parentId: number | null;
+  displayOrder: number;
+  isActive: boolean;
+  quizCount?: number;
+  icon?: string;
+}
+
+export default function QuizzesPage() {
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [quizzes, setQuizzes] = useState<any[]>([]);
+  const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [filteredQuizzes, setFilteredQuizzes] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const catsRes = await fetch('/api/categories');
+        if (catsRes.ok) {
+          const catsData = await catsRes.json();
+          setAllCategories(catsData.data || []);
+        }
+
+        const quizzesRes = await fetch('/api/quizzes');
+        if (quizzesRes.ok) {
+          const quizzesData = await quizzesRes.json();
+          setQuizzes(quizzesData.data?.quizzes || quizzesData.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  // Separate parent and child categories
+  const parentCategories = allCategories.filter(cat => cat.parentId === null);
+  const childCategories = selectedParentId
+    ? allCategories.filter(cat => {
+        const parentCat = allCategories.find(p => p._id === selectedParentId);
+        return parentCat && cat.parentId === parentCat.displayOrder;
+      })
+    : [];
+
+  // Get child IDs for filtering
+  const childIds = selectedParentId ? childCategories.map(c => c._id) : [];
+
+  // Filter quizzes based on selected category
+  useEffect(() => {
+    let result = quizzes;
+    if (selectedChildId) {
+      result = quizzes.filter(q => {
+        const catId = typeof q.category === 'string' ? q.category : q.category?._id;
+        return catId === selectedChildId;
+      });
+    } else if (selectedParentId && childIds.length > 0) {
+      // Show quizzes from all children of selected parent
+      result = quizzes.filter(q => {
+        const catId = typeof q.category === 'string' ? q.category : q.category?._id;
+        return childIds.includes(catId);
+      });
+    }
+    setFilteredQuizzes(result);
+  }, [quizzes, selectedParentId, selectedChildId, childIds]);
+
+  const handleParentSelect = (parentId: string | null) => {
+    setSelectedParentId(parentId);
+    setSelectedChildId(null);
+  };
+
+  const handleChildSelect = (childId: string | null) => {
+    setSelectedChildId(childId);
+  };
+
+  const handleShowAll = () => {
+    setSelectedParentId(null);
+    setSelectedChildId(null);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      
+      <main className="container mx-auto px-4 py-8">
+        {/* Breadcrumb */}
+        <div className="mb-6 text-sm">
+          <Link href="/" className="text-indigo-600 hover:text-indigo-700">
+            Trang chủ
+          </Link>
+          <span className="mx-2 text-gray-500">/</span>
+          <span className="text-gray-600">Bài thi</span>
+        </div>
+
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">
+          📋 Danh sách bài thi
+        </h1>
+
+      {/* Category Navigation */}
+        <CategoryNav 
+          parentCategories={parentCategories}
+          selectedParentId={selectedParentId}
+          selectedCategoryId={selectedChildId}
+          childCategories={childCategories}
+          onParentSelect={handleParentSelect}
+          onChildSelect={handleChildSelect}
+          onShowAll={handleShowAll}
+          totalQuizCount={quizzes.length}
+        />
+
+        {/* Quiz Grid */}
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600">Đang tải...</p>
+          </div>
+        ) : filteredQuizzes.length === 0 ? (
+          <div className="bg-white rounded-lg p-12 text-center border border-gray-200">
+            <p className="text-gray-600 text-lg">Không có bài thi nào</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredQuizzes.map(quiz => (
+              <QuizCard key={quiz._id} quiz={quiz} />
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

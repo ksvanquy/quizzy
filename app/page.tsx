@@ -1,65 +1,145 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useEffect, useState } from 'react';
+import { Header } from './components/home/Header';
+import { CategoryNav } from './components/home/CategoryNav';
+import { QuizCard } from './components/home/QuizCard';
+
+interface Category {
+  _id: string;
+  name: string;
+  slug: string;
+  parentId: number | null;
+  displayOrder: number;
+  isActive: boolean;
+  quizCount?: number;
+  icon?: string;
+}
+
+export default function HomePage() {
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [quizzes, setQuizzes] = useState<any[]>([]);
+  const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const categoriesRes = await fetch('/api/categories');
+        if (categoriesRes.ok) {
+          const categoriesData = await categoriesRes.json();
+          setAllCategories(categoriesData.data || []);
+        }
+
+        const quizzesRes = await fetch('/api/quizzes');
+        if (quizzesRes.ok) {
+          const quizzesData = await quizzesRes.json();
+          setQuizzes(quizzesData.data?.quizzes || quizzesData.data || []);
+        }
+
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  // Separate parent and child categories
+  const parentCategories = allCategories.filter(cat => cat.parentId === null);
+  const childCategories = selectedParentId
+    ? allCategories.filter(cat => {
+        const parentCat = allCategories.find(p => p._id === selectedParentId);
+        return parentCat && cat.parentId === parentCat.displayOrder;
+      })
+    : [];
+
+  // Get child IDs for filtering
+  const childIds = selectedParentId ? childCategories.map(c => c._id) : [];
+
+  // Filter quizzes based on selected category
+  let filteredQuizzes = quizzes;
+  if (selectedChildId) {
+    filteredQuizzes = quizzes.filter(q => {
+      const catId = typeof q.category === 'string' ? q.category : q.category?._id;
+      return catId === selectedChildId;
+    });
+  } else if (selectedParentId && childIds.length > 0) {
+    // Show quizzes from all children of selected parent
+    filteredQuizzes = quizzes.filter(q => {
+      const catId = typeof q.category === 'string' ? q.category : q.category?._id;
+      return childIds.includes(catId);
+    });
+  }
+
+  const handleParentSelect = (parentId: string | null) => {
+    setSelectedParentId(parentId);
+    setSelectedChildId(null);
+  };
+
+  const handleChildSelect = (childId: string | null) => {
+    setSelectedChildId(childId);
+  };
+
+  const handleShowAll = () => {
+    setSelectedParentId(null);
+    setSelectedChildId(null);
+  };
+
+  const totalQuizCount = quizzes.length;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+
+      {/* Category Navigation */}
+      <CategoryNav
+        parentCategories={parentCategories}
+        selectedParentId={selectedParentId}
+        selectedCategoryId={selectedChildId}
+        childCategories={childCategories}
+        onParentSelect={handleParentSelect}
+        onChildSelect={handleChildSelect}
+        onShowAll={handleShowAll}
+        totalQuizCount={totalQuizCount}
+      />
+
+      {/* Main Content - Quiz Cards Grid */}
+      <div className="container mx-auto px-4 py-6">
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600 text-lg">Đang tải bài thi...</p>
+          </div>
+        ) : filteredQuizzes.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">📝</div>
+            <p className="text-gray-600 text-lg">Chưa có bài thi nào trong danh mục này</p>
+          </div>
+        ) : (
+          <>
+            <div className="mb-4 text-sm text-gray-600">
+              Hiển thị <span className="font-semibold">{filteredQuizzes.length}</span> bài thi
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+              {filteredQuizzes.map(quiz => (
+                <QuizCard key={quiz._id} quiz={quiz} />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      <style jsx global>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </div>
   );
 }
