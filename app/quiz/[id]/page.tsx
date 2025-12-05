@@ -14,6 +14,7 @@ interface QuizDetail {
   totalPoints: number;
   passingScore: number;
   createdBy: { _id: string; name: string };
+  questionIds?: any[];
 }
 
 export default function QuizDetailPage() {
@@ -131,7 +132,7 @@ export default function QuizDetailPage() {
           <ul className="space-y-2 text-gray-300">
             <li>📋 Được tạo bởi: <span className="text-white">{quiz.createdBy.name}</span></li>
             <li>🎯 Loại: <span className="text-white">Multiple Choice</span></li>
-            <li>📝 Số câu hỏi: <span className="text-white">15</span></li>
+            <li>📝 Số câu hỏi: <span className="text-white">{quiz.questionIds?.length || 0}</span></li>
           </ul>
         </div>
 

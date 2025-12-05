@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Header } from '@/app/components/home/Header';
 import QuestionRenderer from '@/app/components/questions/QuestionRenderer';
+import { useAuth } from '@/lib/contexts/AuthContext';
 
 interface Question {
   _id: string;
@@ -26,6 +27,7 @@ interface QuizAttempt {
 export default function QuizAttemptPage() {
   const params = useParams();
   const router = useRouter();
+  const { token } = useAuth();
   const quizId = params?.id as string;
   
   const [quiz, setQuiz] = useState<QuizAttempt | null>(null);
@@ -108,23 +110,38 @@ export default function QuizAttemptPage() {
     setIsSubmitting(true);
     
     try {
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`/api/attempts`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           quizId,
           answers,
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to submit quiz');
       const data = await response.json();
       
+      if (!response.ok) {
+        console.error('Submit response error:', data);
+        throw new Error(data.message || 'Failed to submit quiz');
+      }
+      
       // Redirect to results page
-      router.push(`/result/${data.data._id}`);
+      const attemptId = data.data?._id || data._id;
+      if (!attemptId) {
+        console.error('No attempt ID in response:', data);
+        throw new Error('No attempt ID returned');
+      }
+      
+      router.push(`/result/${attemptId}`);
     } catch (err) {
       console.error('Submit error:', err);
-      alert('Failed to submit quiz');
+      alert(`Failed to submit quiz: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setIsSubmitted(false);
       setIsSubmitting(false);
     }
