@@ -91,16 +91,34 @@ export default function HomePage() {
   // Filter quizzes based on selected category
   let filteredQuizzes = quizzes;
   if (selectedChildId) {
+    // Filter by specific child category
     filteredQuizzes = quizzes.filter(q => {
       const catId = typeof q.category === 'string' ? q.category : q.category?._id;
       return catId === selectedChildId;
     });
-  } else if (selectedParentId && childIds.length > 0) {
-    // Show quizzes from all children of selected parent
-    filteredQuizzes = quizzes.filter(q => {
-      const catId = typeof q.category === 'string' ? q.category : q.category?._id;
-      return childIds.includes(catId);
-    });
+  } else if (selectedParentId) {
+    // Filter by parent category - include both direct children and child categories
+    const parentCat = allCategories.find(p => p._id === selectedParentId);
+    
+    if (parentCat) {
+      // Get all child categories of this parent
+      const childCats = allCategories.filter(cat => cat.parentId === parentCat.displayOrder);
+      
+      if (childCats.length > 0) {
+        // If parent has children, show quizzes from all children
+        const childIds = childCats.map(c => c._id);
+        filteredQuizzes = quizzes.filter(q => {
+          const catId = typeof q.category === 'string' ? q.category : q.category?._id;
+          return childIds.includes(catId);
+        });
+      } else {
+        // If parent has no children, show quizzes directly under this parent
+        filteredQuizzes = quizzes.filter(q => {
+          const catId = typeof q.category === 'string' ? q.category : q.category?._id;
+          return catId === selectedParentId;
+        });
+      }
+    }
   }
 
   const handleParentSelect = (parentId: string | null) => {
