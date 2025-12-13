@@ -1,13 +1,14 @@
 import { connectDB } from './lib/db';
-import { Quiz } from './lib/models/Quiz';
+import mongoose from 'mongoose';
 
 async function debug() {
   try {
     await connectDB();
     
-    const quiz = await Quiz.findOne({ slug: 'advanced-mixed-types' });
+    const quizzesCollection = mongoose.connection.collection('quizzes');
+    const quiz = await quizzesCollection.findOne({ slug: 'advanced-mixed-types' });
     console.log('Quiz found:', quiz?.title);
-    console.log('Question IDs count:', quiz?.questionIds.length);
+    console.log('Question IDs count:', quiz?.questionIds?.length);
     console.log('Question IDs:', quiz?.questionIds);
     
     process.exit(0);
