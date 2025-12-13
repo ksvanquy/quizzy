@@ -82,14 +82,28 @@ export class HttpClient {
    * Build URL with query parameters
    */
   private buildUrl(path: string, params?: Record<string, any>): string {
-    // Support relative base like '/api' by resolving against window.origin
-    let base = this.baseURL;
+    let urlString = '';
+    
     if (typeof window !== 'undefined') {
       const origin = window.location.origin;
-      if (!base) base = origin;
-      else if (base.startsWith('/')) base = origin + base;
+      
+      // Default baseURL to /api if not set
+      const base = this.baseURL || '/api';
+      
+      // If base starts with /, make it absolute
+      const fullBase = base.startsWith('/') ? origin + base : base;
+      
+      // Remove leading / from path
+      const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+      
+      // Concatenate with proper slash handling
+      urlString = fullBase + (cleanPath ? '/' + cleanPath : '');
+    } else {
+      // Server-side: concatenate baseURL and path directly
+      urlString = (this.baseURL || '/api') + path;
     }
-    const url = new URL(path, base);
+
+    const url = new URL(urlString);
 
     if (params) {
       Object.entries(params).forEach(([key, value]) => {

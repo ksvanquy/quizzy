@@ -5,24 +5,26 @@ import { useParams, useRouter } from 'next/navigation';
 import { Header } from '@/app/components/home/Header';
 import { useBookmarkWatchlist } from '@/app/hooks/useBookmarkWatchlist';
 import { useAuth } from '@/lib/contexts/AuthContext';
+import { quizApi, bookmarkApi, watchlistApi } from '@/lib/client/api-services';
 
 interface QuizDetail {
-  _id: string;
+  id?: string;
+  _id?: string;
   title: string;
   description: string;
-  category: { _id: string; name: string };
+  category: { _id?: string; name: string };
   difficulty: string;
   duration: number;
   totalPoints: number;
   passingScore: number;
-  createdBy: { _id: string; name: string };
+  createdBy: { _id?: string; name: string };
   questionIds?: any[];
 }
 
 export default function QuizDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const quizId = params?.id as string;
+  const routeQuizId = params?.id as string | undefined;
   const { token } = useAuth();
   const { toggleBookmark, toggleWatchlist, loading: actionLoading } = useBookmarkWatchlist();
   
@@ -33,14 +35,16 @@ export default function QuizDetailPage() {
   const [isInWatchlist, setIsInWatchlist] = useState(false);
 
   useEffect(() => {
-    if (!quizId) return;
+    if (!routeQuizId) {
+      setError('Invalid quiz id');
+      setLoading(false);
+      return;
+    }
 
     const fetchQuiz = async () => {
       try {
-        const response = await fetch(`/api/quizzes/${quizId}`);
-        if (!response.ok) throw new Error('Failed to fetch quiz');
-        const responseData = await response.json();
-        const quizData = responseData.data || responseData;
+        const response = await quizApi.getQuiz(routeQuizId);
+        const quizData = response?.data || response;
         setQuiz(quizData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
@@ -50,45 +54,35 @@ export default function QuizDetailPage() {
     };
 
     fetchQuiz();
-  }, [quizId]);
+  }, [routeQuizId]);
 
   // Fetch bookmark/watchlist status
   useEffect(() => {
-    if (!quizId || !token) return;
+    if (!routeQuizId || !token) return;
 
     const fetchStatus = async () => {
       try {
-        const headers: HeadersInit = {
-          'Authorization': `Bearer ${token}`,
-        };
-
         const [bookmarksRes, watchlistRes] = await Promise.all([
-          fetch('/api/bookmarks', { headers }),
-          fetch('/api/watchlist', { headers }),
+          bookmarkApi.getBookmarks(),
+          watchlistApi.getWatchlist(),
         ]);
 
-        if (bookmarksRes.ok) {
-          const bookmarksData = await bookmarksRes.json();
-          const bookmarkIds = (bookmarksData.data?.bookmarks || []).map((b: any) => 
-            typeof b.quizId === 'string' ? b.quizId : b.quizId?._id
-          );
-          setIsBookmarked(bookmarkIds.includes(quizId));
-        }
+        const bookmarkIds = (bookmarksRes?.data?.bookmarks || []).map((b: any) =>
+          typeof b.quizId === 'string' ? b.quizId : b.quizId?._id
+        );
+        setIsBookmarked(bookmarkIds.includes(routeQuizId));
 
-        if (watchlistRes.ok) {
-          const watchlistData = await watchlistRes.json();
-          const watchlistIds = (watchlistData.data?.watchlist || []).map((w: any) => 
-            typeof w.quizId === 'string' ? w.quizId : w.quizId?._id
-          );
-          setIsInWatchlist(watchlistIds.includes(quizId));
-        }
+        const watchlistIds = (watchlistRes?.data?.watchlist || []).map((w: any) =>
+          typeof w.quizId === 'string' ? w.quizId : w.quizId?._id
+        );
+        setIsInWatchlist(watchlistIds.includes(routeQuizId));
       } catch (err) {
         console.error('Error fetching bookmark/watchlist status:', err);
       }
     };
 
     fetchStatus();
-  }, [quizId, token]);
+  }, [routeQuizId, token]);
 
   if (loading) {
     return (
@@ -121,6 +115,8 @@ export default function QuizDetailPage() {
       </div>
     );
   }
+
+  const quizId = (quiz.id ?? quiz._id ?? routeQuizId)!;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">

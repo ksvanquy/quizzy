@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Header } from '@/app/components/home/Header';
 import QuestionRenderer from '@/app/components/questions/QuestionRenderer';
 import { useAuth } from '@/lib/contexts/AuthContext';
+import { quizApi, attemptApi } from '@/lib/client/api-services';
 
 interface Question {
   _id: string;
@@ -41,14 +42,16 @@ export default function QuizAttemptPage() {
   const [startedAt] = useState(new Date());
 
   useEffect(() => {
-    if (!quizId) return;
+    if (!quizId) {
+      setError('Invalid quiz id');
+      setLoading(false);
+      return;
+    }
 
     const fetchQuiz = async () => {
       try {
-        const response = await fetch(`/api/quizzes/${quizId}`);
-        if (!response.ok) throw new Error('Failed to fetch quiz');
-        const responseData = await response.json();
-        const quizData = responseData.data || responseData;
+        const response = await quizApi.getQuiz(quizId);
+        const quizData = response?.data || response;
         setQuiz(quizData);
         setTimeRemaining(quizData.duration * 60); // Convert to seconds
       } catch (err) {
@@ -118,36 +121,20 @@ export default function QuizAttemptPage() {
     setIsSubmitting(true);
     
     try {
-      const headers: HeadersInit = { 'Content-Type': 'application/json' };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const response = await fetch(`/api/attempts`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          quizId,
-          answers,
-          startedAt: startedAt.toISOString(),
-        }),
+      const response = await attemptApi.createAttempt({
+        quizId,
+        userId: token ? 'current-user' : 'anonymous',
       });
 
-      const data = await response.json();
+      const attemptData = response?.data || response;
       
-      if (!response.ok) {
-        console.error('Submit response error:', data);
-        throw new Error(data.message || 'Failed to submit quiz');
-      }
-      
-      // Redirect to results page
-      const attemptId = data.data?._id || data._id;
-      if (!attemptId) {
-        console.error('No attempt ID in response:', data);
+      if (!attemptData || !attemptData._id) {
+        console.error('No attempt ID in response:', response);
         throw new Error('No attempt ID returned');
       }
       
-      router.push(`/result/${attemptId}`);
+      // Redirect to results page
+      router.push(`/result/${attemptData._id}`);
     } catch (err) {
       console.error('Submit error:', err);
       alert(`Failed to submit quiz: ${err instanceof Error ? err.message : 'Unknown error'}`);

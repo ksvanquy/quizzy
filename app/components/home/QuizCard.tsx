@@ -6,7 +6,8 @@ import { useBookmarkWatchlist } from '@/app/hooks/useBookmarkWatchlist';
 
 interface QuizCardProps {
   quiz: {
-    _id: string;
+    id?: string;
+    _id?: string;
     title: string;
     description?: string;
     difficulty: 'easy' | 'medium' | 'hard';
@@ -52,10 +53,12 @@ export function QuizCard({ quiz, isBookmarked = false, isInWatchlist = false, on
     setLocalWatchlist(isInWatchlist);
   }, [isInWatchlist]);
 
+  const quizId = (quiz as any).id ?? quiz._id;
+
   const handleBookmarkClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const newState = await toggleBookmark(quiz._id, localBookmarked);
+    const newState = await toggleBookmark(quizId, localBookmarked);
     setLocalBookmarked(newState);
     onBookmarkChange?.(newState);
   };
@@ -63,12 +66,12 @@ export function QuizCard({ quiz, isBookmarked = false, isInWatchlist = false, on
   const handleWatchlistClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const newState = await toggleWatchlist(quiz._id, localWatchlist);
+    const newState = await toggleWatchlist(quizId, localWatchlist);
     setLocalWatchlist(newState);
     onWatchlistChange?.(newState);
   };
   return (
-    <Link href={`/quiz/${quiz._id}`}>
+    <Link href={`/quiz/${quizId}`}> 
       <div className="group bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-200 hover:border-indigo-300 flex flex-col">
         {/* Card Header - Gradient Background */}
         <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-4 text-white relative">
