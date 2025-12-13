@@ -4,7 +4,7 @@ interface Category {
   _id: string;
   name: string;
   slug: string;
-  parentId: number | null;
+  parentId: string | null;
   displayOrder: number;
   isActive: boolean;
   quizCount?: number;
@@ -32,6 +32,10 @@ export function CategoryNav({
   onShowAll,
   totalQuizCount,
 }: CategoryNavProps) {
+  // Debug log
+  console.log('CategoryNav - Parent Categories:', parentCategories);
+  console.log('CategoryNav - Child Categories:', childCategories);
+  
   return (
     <>
       {/* Parent Categories - Horizontal Scroll */}
@@ -40,6 +44,7 @@ export function CategoryNav({
           <div className="flex gap-3 overflow-x-auto py-4 scrollbar-hide">
             {/* Tất cả button */}
             <button
+              key="all-categories"
               onClick={onShowAll}
               className={`flex items-center gap-2 px-6 py-3 rounded-full whitespace-nowrap transition font-medium flex-shrink-0 ${
                 selectedParentId === null
@@ -61,9 +66,9 @@ export function CategoryNav({
             </button>
 
             {/* Parent Categories */}
-            {parentCategories.map((cat) => (
+            {parentCategories.map((cat, index) => (
               <button
-                key={cat._id}
+                key={cat._id || `parent-${index}`}
                 onClick={() => {
                   onParentSelect(cat._id);
                   onChildSelect(null);
@@ -97,6 +102,7 @@ export function CategoryNav({
           <div className="container mx-auto px-4">
             <div className="flex gap-2 overflow-x-auto py-3 scrollbar-hide">
               <button
+                key="all-children"
                 onClick={() => onChildSelect(null)}
                 className={`px-4 py-2 rounded-lg whitespace-nowrap transition text-sm font-medium flex-shrink-0 ${
                   selectedCategoryId === null
@@ -107,9 +113,9 @@ export function CategoryNav({
                 Tất cả
               </button>
 
-              {childCategories.map((cat) => (
+              {childCategories.map((cat, index) => (
                 <button
-                  key={cat._id}
+                  key={cat._id || `child-${index}`}
                   onClick={() => onChildSelect(cat._id)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition text-sm font-medium flex-shrink-0 ${
                     selectedCategoryId === cat._id

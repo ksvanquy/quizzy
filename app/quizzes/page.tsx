@@ -10,7 +10,7 @@ interface Category {
   _id: string;
   name: string;
   slug: string;
-  parentId: number | null;
+  parentId: string | null;
   displayOrder: number;
   isActive: boolean;
   quizCount?: number;
@@ -62,12 +62,21 @@ export default function QuizzesPage() {
 
   // Separate parent and child categories
   const parentCategories = allCategories.filter(cat => cat.parentId === null);
+  
+  // Debug log
+  console.log('All Categories:', allCategories);
+  console.log('Parent Categories:', parentCategories);
+  console.log('Selected Parent ID:', selectedParentId);
+  
   const childCategories = selectedParentId
     ? allCategories.filter(cat => {
-        const parentCat = allCategories.find(p => p._id === selectedParentId);
-        return parentCat && cat.parentId === parentCat.displayOrder;
+        console.log('Filtering children for parent:', selectedParentId);
+        console.log('Checking cat:', cat, 'parentId:', cat.parentId);
+        return cat.parentId === selectedParentId;
       })
     : [];
+  
+  console.log('Child Categories:', childCategories);
 
   // Get child IDs for filtering
   const childIds = selectedParentId ? childCategories.map(c => c._id) : [];
@@ -77,13 +86,13 @@ export default function QuizzesPage() {
     let result = quizzes;
     if (selectedChildId) {
       result = quizzes.filter(q => {
-        const catId = typeof q.category === 'string' ? q.category : q.category?._id;
+        const catId = typeof q.categoryId === 'string' ? q.categoryId : q.categoryId?._id;
         return catId === selectedChildId;
       });
     } else if (selectedParentId && childIds.length > 0) {
       // Show quizzes from all children of selected parent
       result = quizzes.filter(q => {
-        const catId = typeof q.category === 'string' ? q.category : q.category?._id;
+        const catId = typeof q.categoryId === 'string' ? q.categoryId : q.categoryId?._id;
         return childIds.includes(catId);
       });
     }

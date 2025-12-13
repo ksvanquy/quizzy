@@ -34,6 +34,8 @@ export async function GET(request: NextRequest) {
     const result = await categoryService.getAllCategories(page, limit);
     const items = result.items.map((cat) => CategoryMapper.toResponseDto(cat));
 
+    console.log('[API /categories] Returning data:', { itemCount: items.length, items });
+
     return sendSuccess(
       { items, total: result.total, page, limit },
       undefined,

@@ -11,7 +11,7 @@ interface Category {
   _id: string;
   name: string;
   slug: string;
-  parentId: number | null;
+  parentId: string | null;
   displayOrder: number;
   isActive: boolean;
   quizCount?: number;
