@@ -76,8 +76,10 @@ export class ErrorTracker {
 
     // Clean up old reports
     if (this.reportedErrors.size > this.maxReports) {
-      const firstKey = this.reportedErrors.keys().next().value;
-      this.reportedErrors.delete(firstKey);
+      const firstKey = this.reportedErrors.keys().next().value as string | undefined;
+      if (firstKey) {
+        this.reportedErrors.delete(firstKey);
+      }
     }
 
     // Log error

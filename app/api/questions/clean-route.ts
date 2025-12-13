@@ -65,11 +65,11 @@ export async function POST(request: NextRequest) {
     // Note: createQuestionSchema is a union type for all question types
     const validation = createQuestionSchema.safeParse(body);
     if (!validation.success) {
-      const fieldErrors = validation.error.flatten().fieldErrors;
+      const fieldErrors = validation.error.flatten().fieldErrors as Record<string, string[]>;
       return sendValidationError('Invalid input', fieldErrors);
     }
 
-    const question = await questionService.createQuestion(validation.data);
+    const question = await questionService.createQuestion(validation.data as any);
     const responseDto = QuestionMapper.toResponseDto(question);
 
     logger.info('Question created', { questionId: question.id, type: validation.data.type });

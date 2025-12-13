@@ -34,13 +34,14 @@ export async function POST(request: NextRequest) {
       return sendUnauthorized('Invalid refresh token');
     }
 
-    const result = await authService.refreshToken(decoded.userId);
+    const result = await authService.refreshAccessToken(decoded.userId);
 
-    if (!result) {
-      return sendUnauthorized('User not found');
-    }
-
-    const responseDto = AuthMapper.toRefreshResponseDto(result);
+    const responseDto = {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      expiresIn: 3600, // 1 hour
+      tokenType: 'Bearer',
+    };
 
     logger.info('Token refreshed successfully', { userId: decoded.userId });
 

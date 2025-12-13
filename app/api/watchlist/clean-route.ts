@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       return sendValidationError('Invalid pagination params', fieldErrors);
     }
 
-    const result = await watchlistService.getUserWatchlist(payload.userId, page, limit);
+    const result = await watchlistService.getWatchlistByUser(payload.userId, page, limit);
     const items = result.items.map((watchlist) => WatchlistMapper.toResponseDto(watchlist));
 
     return sendSuccess(

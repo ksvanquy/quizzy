@@ -10,7 +10,8 @@ export class AuthMapper {
    * Convert User entity and tokens to AuthResponseDto
    */
   static toAuthResponseDto(user: User, accessToken: string, refreshToken: string): AuthResponseDto {
-    const expiresIn = getAccessTokenExpiry(); // in seconds
+    // 7 days = 7 * 24 * 60 * 60 = 604800 seconds
+    const expiresIn = 604800; // 7 days in seconds
 
     return {
       accessToken,
@@ -31,8 +32,9 @@ export class AuthMapper {
    * Create new tokens for user
    */
   static createTokens(user: User): { accessToken: string; refreshToken: string } {
-    const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
+    const tokenPayload = { userId: user.id, email: user.email, role: user.role };
+    const accessToken = generateAccessToken(tokenPayload);
+    const refreshToken = generateRefreshToken(tokenPayload);
 
     return { accessToken, refreshToken };
   }

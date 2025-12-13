@@ -1,17 +1,7 @@
 import mongoose from 'mongoose';
-// Import all models to ensure they're registered
-import './models/User';
-import './models/Category';
-import './models/Quiz';
-import './models/Question';
-import './models/Option';
-import './models/Ordering';
-import './models/Matching';
-import './models/FillBlank';
-import './models/NumericInput';
-import './models/Attempt';
-import './models/Bookmark';
-import './models/Watchlist';
+
+// DEPRECATED: This file is kept for backward compatibility
+// Use infrastructure/persistence/database.ts instead for Clean Architecture
 
 let cached = global.mongoose;
 
@@ -30,7 +20,7 @@ export async function connectDB() {
     };
 
     cached.promise = mongoose
-      .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/quizzy_db', opts)
+      .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/quizzy', opts)
       .then((mongoose) => {
         return mongoose;
       });

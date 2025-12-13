@@ -138,9 +138,12 @@ export async function withRole<T>(
 /**
  * Verify token - throw error if invalid
  */
-export function verifyToken(token: string): TokenPayload {
+export function verifyToken(token: string): TokenPayload | null {
   return verifyAccessToken(token);
 }
+
+// Backward compatibility aliases
+export const validateToken = verifyAccessToken;
 
 /**
  * Is user admin

@@ -43,11 +43,17 @@ export function sendSuccess<T>(
  * Send error response
  */
 export function sendError(
-  code: string,
-  message: string,
+  codeOrMessage: string,
+  messageOrStatus?: string | number,
   statusCode: number = HTTP_STATUS.INTERNAL_SERVER_ERROR,
   details?: any
 ): NextResponse<ApiErrorResponse> {
+  // Allow legacy signature sendError(message, statusCode)
+  const isLegacy = typeof messageOrStatus === 'number';
+  const code = isLegacy ? 'ERROR' : codeOrMessage;
+  const message = isLegacy ? codeOrMessage : (messageOrStatus as string);
+  const finalStatus = isLegacy ? (messageOrStatus as number) : statusCode;
+
   const response: ApiErrorResponse = {
     success: false,
     error: {
@@ -60,7 +66,7 @@ export function sendError(
 
   logger.error(`API Error: [${code}] ${message}`, details);
 
-  return NextResponse.json(response, { status: statusCode });
+  return NextResponse.json(response, { status: finalStatus });
 }
 
 /**

@@ -9,8 +9,8 @@ import { REGEX_PATTERNS, VALIDATION } from '@/constants/app.constants';
 export const createUserSchema = z.object({
   username: z
     .string()
-    .min(VALIDATION.USERNAME_MIN, `Username must be at least ${VALIDATION.USERNAME_MIN} characters`)
-    .max(VALIDATION.USERNAME_MAX, `Username must be at most ${VALIDATION.USERNAME_MAX} characters`)
+    .min(VALIDATION.MIN_USERNAME_LENGTH, `Username must be at least ${VALIDATION.MIN_USERNAME_LENGTH} characters`)
+    .max(VALIDATION.MAX_USERNAME_LENGTH, `Username must be at most ${VALIDATION.MAX_USERNAME_LENGTH} characters`)
     .regex(REGEX_PATTERNS.USERNAME, 'Invalid username format'),
   email: z
     .string()
@@ -18,8 +18,8 @@ export const createUserSchema = z.object({
     .regex(REGEX_PATTERNS.EMAIL, 'Invalid email format'),
   password: z
     .string()
-    .min(VALIDATION.PASSWORD_MIN, `Password must be at least ${VALIDATION.PASSWORD_MIN} characters`)
-    .max(VALIDATION.PASSWORD_MAX, `Password must be at most ${VALIDATION.PASSWORD_MAX} characters`)
+    .min(VALIDATION.MIN_PASSWORD_LENGTH, `Password must be at least ${VALIDATION.MIN_PASSWORD_LENGTH} characters`)
+    .max(VALIDATION.MAX_PASSWORD_LENGTH, `Password must be at most ${VALIDATION.MAX_PASSWORD_LENGTH} characters`)
     .regex(REGEX_PATTERNS.PASSWORD, 'Password must contain at least one letter and one number'),
   name: z
     .string()
@@ -45,8 +45,8 @@ export const changePasswordSchema = z
     oldPassword: z.string().min(1, 'Current password is required'),
     newPassword: z
       .string()
-      .min(VALIDATION.PASSWORD_MIN, `Password must be at least ${VALIDATION.PASSWORD_MIN} characters`)
-      .max(VALIDATION.PASSWORD_MAX, `Password must be at most ${VALIDATION.PASSWORD_MAX} characters`),
+      .min(VALIDATION.MIN_PASSWORD_LENGTH, `Password must be at least ${VALIDATION.MIN_PASSWORD_LENGTH} characters`)
+      .max(VALIDATION.MAX_PASSWORD_LENGTH, `Password must be at most ${VALIDATION.MAX_PASSWORD_LENGTH} characters`),
     confirmPassword: z.string(),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
@@ -90,8 +90,8 @@ export const moveCategorySchema = z.object({
 export const createQuizSchema = z.object({
   title: z
     .string()
-    .min(VALIDATION.QUIZ_TITLE_MIN, `Title must be at least ${VALIDATION.QUIZ_TITLE_MIN} characters`)
-    .max(VALIDATION.QUIZ_TITLE_MAX, `Title must be at most ${VALIDATION.QUIZ_TITLE_MAX} characters`),
+    .min(VALIDATION.MIN_QUIZ_TITLE_LENGTH, `Title must be at least ${VALIDATION.MIN_QUIZ_TITLE_LENGTH} characters`)
+    .max(VALIDATION.MAX_QUIZ_TITLE_LENGTH, `Title must be at most ${VALIDATION.MAX_QUIZ_TITLE_LENGTH} characters`),
   description: z.string().max(1000, 'Description must be at most 1000 characters').optional(),
   categoryId: z.string().uuid('Invalid category ID'),
   difficulty: z.enum(['easy', 'medium', 'hard']),
@@ -119,8 +119,8 @@ export const createQuizSchema = z.object({
 export const updateQuizSchema = z.object({
   title: z
     .string()
-    .min(VALIDATION.QUIZ_TITLE_MIN)
-    .max(VALIDATION.QUIZ_TITLE_MAX)
+    .min(VALIDATION.MIN_QUIZ_TITLE_LENGTH)
+    .max(VALIDATION.MAX_QUIZ_TITLE_LENGTH)
     .optional(),
   description: z.string().max(1000).optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']).optional(),
@@ -138,8 +138,8 @@ export const updateQuizSchema = z.object({
 export const createQuestionBaseSchema = z.object({
   text: z
     .string()
-    .min(VALIDATION.QUESTION_TEXT_MIN, `Question text must be at least ${VALIDATION.QUESTION_TEXT_MIN} characters`)
-    .max(VALIDATION.QUESTION_TEXT_MAX, `Question text must be at most ${VALIDATION.QUESTION_TEXT_MAX} characters`),
+    .min(VALIDATION.MIN_QUESTION_TEXT_LENGTH, `Question text must be at least ${VALIDATION.MIN_QUESTION_TEXT_LENGTH} characters`)
+    .max(VALIDATION.MAX_QUESTION_TEXT_LENGTH, `Question text must be at most ${VALIDATION.MAX_QUESTION_TEXT_LENGTH} characters`),
   difficulty: z.enum(['easy', 'medium', 'hard']),
   points: z
     .number()
@@ -210,7 +210,7 @@ export const createQuestionSchema = z.union([
 ]);
 
 export const updateQuestionSchema = z.object({
-  text: z.string().min(VALIDATION.QUESTION_TEXT_MIN).max(VALIDATION.QUESTION_TEXT_MAX).optional(),
+  text: z.string().min(VALIDATION.MIN_QUESTION_TEXT_LENGTH).max(VALIDATION.MAX_QUESTION_TEXT_LENGTH).optional(),
   difficulty: z.enum(['easy', 'medium', 'hard']).optional(),
   points: z.number().int().min(1).max(100).optional(),
   explanation: z.string().max(1000).optional(),
@@ -234,13 +234,13 @@ export const registerSchema = z
   .object({
     username: z
       .string()
-      .min(VALIDATION.USERNAME_MIN, `Username must be at least ${VALIDATION.USERNAME_MIN} characters`)
-      .max(VALIDATION.USERNAME_MAX, `Username must be at most ${VALIDATION.USERNAME_MAX} characters`),
+      .min(VALIDATION.MIN_USERNAME_LENGTH, `Username must be at least ${VALIDATION.MIN_USERNAME_LENGTH} characters`)
+      .max(VALIDATION.MAX_USERNAME_LENGTH, `Username must be at most ${VALIDATION.MAX_USERNAME_LENGTH} characters`),
     email: z.string().email('Invalid email address'),
     password: z
       .string()
-      .min(VALIDATION.PASSWORD_MIN, `Password must be at least ${VALIDATION.PASSWORD_MIN} characters`)
-      .max(VALIDATION.PASSWORD_MAX, `Password must be at most ${VALIDATION.PASSWORD_MAX} characters`),
+      .min(VALIDATION.MIN_PASSWORD_LENGTH, `Password must be at least ${VALIDATION.MIN_PASSWORD_LENGTH} characters`)
+      .max(VALIDATION.MAX_PASSWORD_LENGTH, `Password must be at most ${VALIDATION.MAX_PASSWORD_LENGTH} characters`),
     confirmPassword: z.string(),
     name: z.string().min(1, 'Name is required').max(100, 'Name must be at most 100 characters'),
   })
@@ -258,8 +258,8 @@ export const changePasswordAuthSchema = z
     currentPassword: z.string().min(1, 'Current password is required'),
     newPassword: z
       .string()
-      .min(VALIDATION.PASSWORD_MIN, `Password must be at least ${VALIDATION.PASSWORD_MIN} characters`)
-      .max(VALIDATION.PASSWORD_MAX, `Password must be at most ${VALIDATION.PASSWORD_MAX} characters`),
+      .min(VALIDATION.MIN_PASSWORD_LENGTH, `Password must be at least ${VALIDATION.MIN_PASSWORD_LENGTH} characters`)
+      .max(VALIDATION.MAX_PASSWORD_LENGTH, `Password must be at most ${VALIDATION.MAX_PASSWORD_LENGTH} characters`),
     confirmPassword: z.string(),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {

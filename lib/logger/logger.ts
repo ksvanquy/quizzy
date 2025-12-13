@@ -168,6 +168,9 @@ export class Logger {
  */
 export const globalLogger = new Logger('Quizzy');
 
+// Legacy default logger alias for existing imports
+export const logger = globalLogger;
+
 /**
  * Get logger for a specific context
  */

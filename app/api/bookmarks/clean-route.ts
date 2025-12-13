@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       return sendValidationError('Invalid pagination params', fieldErrors);
     }
 
-    const result = await bookmarkService.getUserBookmarks(payload.userId, page, limit);
+    const result = await bookmarkService.getBookmarksByUser(payload.userId, page, limit);
     const items = result.items.map((bookmark) => BookmarkMapper.toResponseDto(bookmark));
 
     return sendSuccess(

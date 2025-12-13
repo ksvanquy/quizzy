@@ -20,22 +20,33 @@ interface BookmarkedQuiz {
 
 export default function BookmarksPage() {
   const router = useRouter();
-  const { getBookmarks, toggleBookmark, loading, error } = useBookmarkWatchlist();
+  const { toggleBookmark, loading } = useBookmarkWatchlist();
   const [bookmarks, setBookmarks] = useState<BookmarkedQuiz[]>([]);
   const [pageLoading, setPageLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchBookmarks = async () => {
       try {
-        const data = await getBookmarks();
-        setBookmarks(data);
+        const res = await fetch('/api/bookmarks', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+          },
+        });
+        
+        if (!res.ok) throw new Error('Failed to fetch bookmarks');
+        
+        const data = await res.json();
+        setBookmarks(data.items || []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load bookmarks');
       } finally {
         setPageLoading(false);
       }
     };
 
     fetchBookmarks();
-  }, [getBookmarks]);
+  }, []);
 
   const handleRemoveBookmark = async (quizId: string) => {
     await toggleBookmark(quizId, true);

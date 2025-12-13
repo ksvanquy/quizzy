@@ -27,54 +27,31 @@ export async function POST(request: NextRequest) {
       return sendValidationError('Invalid input', fieldErrors);
     }
 
-    if (!validateEmail(email)) {
-      return sendError('Invalid email format', 400);
-    }
-
-    if (password.length < 6) {
-      return sendError('Password must be at least 6 characters', 400);
-    }
-
-    // Check if user exists
-    const existingUser = await User.findOne({
-      $or: [{ email }, { username }],
+    // Register user
+    const result = await authService.register({
+      username: validation.data.username,
+      email: validation.data.email,
+      password: validation.data.password,
+      name: validation.data.name,
     });
 
-    if (existingUser) {
-      return sendError('User already exists', 400);
-    }
+    const responseDto = AuthMapper.toAuthResponseDto(result.user, result.accessToken, result.refreshToken);
 
-    // Hash password and create user
-    const hashedPassword = await hashPassword(password);
-    const user = await User.create({
-      username,
-      email,
-      password: hashedPassword,
-      name,
-    });
+    logger.info('User registered successfully', { userId: result.user.id });
 
-    const token = generateToken({
-      userId: user._id.toString(),
-      email: user.email,
-      role: user.role,
-    });
-
-    return sendSuccess(
-      {
-        user: {
-          id: user._id,
-          username: user.username,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        },
-        token,
-      },
-      'Registration successful',
-      201
-    );
+    return sendSuccess(responseDto, 'Registration successful', HTTP_STATUS.CREATED);
   } catch (error) {
-    console.error('Register error:', error);
-    return sendError('Internal server error', 500);
+    if (error instanceof Error) {
+      if (error.message.includes('already')) {
+        return sendConflict(error.message);
+      }
+    }
+
+    logger.error('Register error', error as Error);
+    return sendError(
+      'REGISTER_ERROR',
+      'An error occurred during registration',
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
   }
 }

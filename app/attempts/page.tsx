@@ -32,9 +32,12 @@ export default function AttemptsPage() {
         setLoading(true);
         const data = await apiCall(
           `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/attempts`,
-          'GET',
-          undefined,
-          token || undefined
+          {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${token || ''}`,
+            },
+          }
         ) as any;
         setAttempts(data.attempts || []);
         setError('');

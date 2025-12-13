@@ -55,6 +55,17 @@ export class AttemptService {
   }
 
   /**
+   * Alias for backwards compatibility with API handlers
+   */
+  async getUserAttempts(
+    userId: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ items: Attempt[]; total: number }> {
+    return this.getAttemptsByUser(userId, page, limit);
+  }
+
+  /**
    * Get all attempts for a quiz
    */
   async getAttemptsByQuiz(

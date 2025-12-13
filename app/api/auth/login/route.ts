@@ -27,14 +27,22 @@ export async function POST(request: NextRequest) {
       return sendValidationError('Invalid input', fieldErrors);
     }
 
-    // Authenticate user
-    const result = await authService.login(validation.data);
+    // Authenticate user (accepts either email or username per schema refine)
+    const { email, username, password } = validation.data;
+
+    if (!email && !username) {
+      return sendValidationError('Invalid input', { email: ['Either email or username is required'] });
+    }
+
+    const result = email
+      ? await authService.login(email, password)
+      : await authService.loginByUsername(username as string, password);
 
     if (!result) {
       return sendUnauthorized('Invalid credentials');
     }
 
-    const responseDto = AuthMapper.toLoginResponseDto(result);
+    const responseDto = AuthMapper.toAuthResponseDto(result.user, result.accessToken, result.refreshToken);
 
     logger.info('User login successful', { userId: result.user.id });
 

@@ -2,8 +2,22 @@
 
 import React, { ReactNode, createContext, useState, useCallback, useEffect } from 'react';
 import { getLogger } from '@/lib/logger/logger';
-import { getAccessToken, removeTokens } from '@/lib/utils/jwt';
 import { User } from '@/core/user/user.entity';
+
+// Helper functions for token management
+const getAccessToken = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('token');
+  }
+  return null;
+};
+
+const removeTokens = () => {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  }
+};
 
 const logger = getLogger('AuthProvider');
 

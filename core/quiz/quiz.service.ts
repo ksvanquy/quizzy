@@ -230,12 +230,12 @@ export class QuizService {
     const quiz = await this.getQuizById(quizId);
 
     // Must be active
-    if (!quiz.isActive()) {
+    if (quiz.status !== 'active') {
       return false;
     }
 
     // Check max attempts
-    if (!quiz.canAttempt(attemptCount)) {
+    if (quiz.maxAttempts > 0 && attemptCount >= quiz.maxAttempts) {
       return false;
     }
 

@@ -48,11 +48,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = useCallback(
     async (username: string, email: string, password: string, name: string) => {
-      const response = await apiCall('/api/auth/register', 'POST', {
-        username,
-        email,
-        password,
-        name,
+      const response = await apiCall('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          username,
+          email,
+          password,
+          name,
+        }),
       }) as any;
 
       setUser(response.user);
@@ -64,7 +67,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const login = useCallback(async (email: string, password: string) => {
-    const response = await apiCall('/api/auth/login', 'POST', { email, password }) as any;
+    const response = await apiCall('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }) as any;
 
     setUser(response.user);
     setToken(response.token);
@@ -83,7 +89,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async (data: Partial<User>) => {
       if (!token) throw new Error('Not authenticated');
 
-      const response = await apiCall('/api/auth/profile', 'PUT', data, token) as User;
+      const response = await apiCall('/api/auth/profile', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }) as User;
       setUser(response);
       localStorage.setItem('user', JSON.stringify(response));
     },

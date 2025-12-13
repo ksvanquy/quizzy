@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateToken, getUserFromToken } from '@/lib/guards/auth';
+import { verifyToken } from '@/lib/guards/auth';
 import { sendUnauthorized } from '@/lib/api-response';
 
 export interface AuthPayload {
@@ -25,7 +25,7 @@ export async function withAuth(
     }
 
     // Validate token
-    const payload = validateToken(token);
+    const payload = verifyToken(token);
 
     if (!payload) {
       return sendUnauthorized('Invalid or expired token');
@@ -89,7 +89,7 @@ export async function withOptionalAuth(
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
 
     if (token) {
-      const payload = validateToken(token);
+      const payload = verifyToken(token);
       if (payload) {
         return handler(request, {
           userId: payload.userId,
