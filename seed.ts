@@ -11,6 +11,9 @@ const CategorySchema = new Schema({
   name: String,
   slug: String,
   description: String,
+  parentId: Schema.Types.Mixed, // null for parent, or parent category ID for child
+  displayOrder: Number,
+  isActive: Boolean,
   createdAt: Date,
 });
 
@@ -91,21 +94,87 @@ async function seed() {
     console.log('✓ Cleared');
 
     console.log('\n📂 Seeding categories...');
-    const category1 = await Category.create({
-      _id: 'cat-1',
+    // Parent categories
+    const categoryWeb = await Category.create({
+      _id: 'cat-web',
+      name: 'Web Development',
+      slug: 'web-development',
+      description: 'Web development technologies',
+      parentId: null,
+      displayOrder: 1,
+      isActive: true,
+      createdAt: new Date(),
+    });
+
+    const categoryMobile = await Category.create({
+      _id: 'cat-mobile',
+      name: 'Mobile Development',
+      slug: 'mobile-development',
+      description: 'Mobile development technologies',
+      parentId: null,
+      displayOrder: 2,
+      isActive: true,
+      createdAt: new Date(),
+    });
+
+    // Child categories for Web Development
+    const categoryJavaScript = await Category.create({
+      _id: 'cat-javascript',
       name: 'JavaScript',
       slug: 'javascript',
       description: 'JavaScript programming language',
+      parentId: 1, // displayOrder of parent
+      displayOrder: 1,
+      isActive: true,
       createdAt: new Date(),
     });
-    const category2 = await Category.create({
-      _id: 'cat-2',
+
+    const categoryTypeScript = await Category.create({
+      _id: 'cat-typescript',
       name: 'TypeScript',
       slug: 'typescript',
       description: 'TypeScript programming language',
+      parentId: 1,
+      displayOrder: 2,
+      isActive: true,
       createdAt: new Date(),
     });
-    console.log('✓ Categories seeded');
+
+    const categoryReact = await Category.create({
+      _id: 'cat-react',
+      name: 'React.js',
+      slug: 'reactjs',
+      description: 'React JavaScript library',
+      parentId: 1,
+      displayOrder: 3,
+      isActive: true,
+      createdAt: new Date(),
+    });
+
+    // Child categories for Mobile Development
+    const categorySwift = await Category.create({
+      _id: 'cat-swift',
+      name: 'Swift',
+      slug: 'swift',
+      description: 'Swift programming for iOS',
+      parentId: 2,
+      displayOrder: 1,
+      isActive: true,
+      createdAt: new Date(),
+    });
+
+    const categoryKotlin = await Category.create({
+      _id: 'cat-kotlin',
+      name: 'Kotlin',
+      slug: 'kotlin',
+      description: 'Kotlin programming for Android',
+      parentId: 2,
+      displayOrder: 2,
+      isActive: true,
+      createdAt: new Date(),
+    });
+
+    console.log('✓ Categories seeded (1 parent, 2 parents, 5 children)');
 
     console.log('\n👥 Seeding users...');
     const user = await User.create({
@@ -122,14 +191,14 @@ async function seed() {
     console.log('✓ Users seeded');
 
     console.log('\n📝 Seeding questions...');
-    const question1 = await Question.create({
+    const q1 = await Question.create({
       _id: 'q-1',
       text: 'What is the correct way to declare a variable in JavaScript?',
       type: 'single_choice',
       difficulty: 'easy',
       points: 10,
       explanation: 'let and const are modern ways to declare variables in JavaScript',
-      categoryIds: [category1._id],
+      categoryIds: [categoryJavaScript._id],
       tags: ['variables', 'basics'],
       correctOptionId: 'opt-1',
       optionIds: ['opt-1', 'opt-2', 'opt-3', 'opt-4'],
@@ -137,21 +206,52 @@ async function seed() {
       updatedAt: new Date(),
     });
     
-    const question2 = await Question.create({
+    const q2 = await Question.create({
       _id: 'q-2',
       text: 'Which of the following are valid TypeScript types?',
       type: 'multiple_choice',
       difficulty: 'medium',
       points: 15,
       explanation: 'TypeScript has many built-in types including string, number, boolean, and more',
-      categoryIds: [category2._id],
+      categoryIds: [categoryTypeScript._id],
       tags: ['types', 'typescript'],
       correctOptionIds: ['opt-5', 'opt-6', 'opt-7'],
       optionIds: ['opt-5', 'opt-6', 'opt-7', 'opt-8'],
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-    console.log('✓ Questions seeded');
+
+    const q3 = await Question.create({
+      _id: 'q-3',
+      text: 'What is JSX in React?',
+      type: 'single_choice',
+      difficulty: 'easy',
+      points: 10,
+      explanation: 'JSX is a syntax extension to JavaScript that looks similar to HTML',
+      categoryIds: [categoryReact._id],
+      tags: ['jsx', 'react'],
+      correctOptionId: 'opt-9',
+      optionIds: ['opt-9', 'opt-10', 'opt-11', 'opt-12'],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const q4 = await Question.create({
+      _id: 'q-4',
+      text: 'What is Swift primarily used for?',
+      type: 'single_choice',
+      difficulty: 'easy',
+      points: 10,
+      explanation: 'Swift is primarily used for iOS app development',
+      categoryIds: [categorySwift._id],
+      tags: ['ios', 'mobile'],
+      correctOptionId: 'opt-13',
+      optionIds: ['opt-13', 'opt-14', 'opt-15', 'opt-16'],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    console.log('✓ Questions seeded (4 questions)');
 
     console.log('\n📚 Seeding quizzes...');
     const quiz1 = await Quiz.create({
@@ -159,7 +259,7 @@ async function seed() {
       title: 'JavaScript Basics Quiz',
       slug: 'javascript-basics-quiz',
       description: 'Test your knowledge of JavaScript fundamentals',
-      categoryId: category1._id,
+      categoryId: categoryJavaScript._id,
       createdById: user._id,
       difficulty: 'easy',
       duration: 30,
@@ -167,7 +267,7 @@ async function seed() {
       passingScore: 70,
       status: 'active',
       maxAttempts: 3,
-      questionIds: [question1._id],
+      questionIds: [q1._id],
       shuffleQuestions: false,
       shuffleOptions: true,
       revealAnswersAfterSubmission: true,
@@ -183,7 +283,7 @@ async function seed() {
       title: 'TypeScript Advanced Quiz',
       slug: 'typescript-advanced-quiz',
       description: 'Advanced TypeScript concepts and patterns',
-      categoryId: category2._id,
+      categoryId: categoryTypeScript._id,
       createdById: user._id,
       difficulty: 'hard',
       duration: 60,
@@ -191,7 +291,7 @@ async function seed() {
       passingScore: 80,
       status: 'active',
       maxAttempts: 2,
-      questionIds: [question2._id],
+      questionIds: [q2._id],
       shuffleQuestions: true,
       shuffleOptions: true,
       revealAnswersAfterSubmission: false,
@@ -201,14 +301,63 @@ async function seed() {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-    console.log('✓ Quizzes seeded');
+
+    const quiz3 = await Quiz.create({
+      _id: 'quiz-3',
+      title: 'React Essential Quiz',
+      slug: 'react-essential-quiz',
+      description: 'Learn React fundamentals and best practices',
+      categoryId: categoryReact._id,
+      createdById: user._id,
+      difficulty: 'medium',
+      duration: 45,
+      totalPoints: 150,
+      passingScore: 75,
+      status: 'active',
+      maxAttempts: 5,
+      questionIds: [q3._id],
+      shuffleQuestions: false,
+      shuffleOptions: true,
+      revealAnswersAfterSubmission: true,
+      tags: ['react', 'web'],
+      totalAttempts: 0,
+      averageScore: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const quiz4 = await Quiz.create({
+      _id: 'quiz-4',
+      title: 'iOS Swift Quiz',
+      slug: 'ios-swift-quiz',
+      description: 'Master Swift programming for iOS development',
+      categoryId: categorySwift._id,
+      createdById: user._id,
+      difficulty: 'medium',
+      duration: 50,
+      totalPoints: 150,
+      passingScore: 75,
+      status: 'active',
+      maxAttempts: 4,
+      questionIds: [q4._id],
+      shuffleQuestions: true,
+      shuffleOptions: true,
+      revealAnswersAfterSubmission: true,
+      tags: ['swift', 'ios', 'mobile'],
+      totalAttempts: 0,
+      averageScore: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    console.log('✓ Quizzes seeded (4 quizzes)');
 
     console.log('\n✅ Database seeding completed successfully!');
     console.log(`\nCreated:`);
-    console.log(`  - 2 categories`);
+    console.log(`  - 7 categories (2 parents + 5 children)`);
     console.log(`  - 1 user (admin@quizzy.com / admin123)`);
-    console.log(`  - 2 questions`);
-    console.log(`  - 2 quizzes\n`);
+    console.log(`  - 4 questions`);
+    console.log(`  - 4 quizzes\n`);
     
     await mongoose.disconnect();
     process.exit(0);

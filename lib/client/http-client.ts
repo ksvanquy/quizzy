@@ -98,6 +98,17 @@ export class HttpClient {
       
       // Concatenate with proper slash handling
       urlString = fullBase + (cleanPath ? '/' + cleanPath : '');
+      
+      // DEBUG: Log URL construction
+      console.log('[HttpClient] buildUrl:', {
+        baseURL: this.baseURL,
+        base,
+        origin,
+        fullBase,
+        path,
+        cleanPath,
+        final: urlString,
+      });
     } else {
       // Server-side: concatenate baseURL and path directly
       urlString = (this.baseURL || '/api') + path;
@@ -200,6 +211,8 @@ export class HttpClient {
 
       // Build URL
       const url = this.buildUrl(path, requestConfig.params);
+
+      console.log('[HttpClient.request]', { path, url, method: requestConfig.method });
 
       // Execute request
       const response = await this.executeWithRetries(url, requestConfig);

@@ -1,9 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getLogger } from './lib/logger/logger';
-import { verifyAccessToken } from './lib/utils/jwt';
+import { verifyAccessToken, debugVerifyToken } from './lib/utils/jwt';
 import { UnauthorizedError } from './core/shared/errors';
 
+// Use Node.js runtime to have access to environment variables
+export const runtime = 'nodejs';
+
 const logger = getLogger('middleware');
+
+// Check env on first run
+let envChecked = false;
+if (!envChecked) {
+  console.log('[Middleware Init] Environment check:', {
+    jwtSecretSet: !!process.env.JWT_SECRET,
+    jwtSecretLength: process.env.JWT_SECRET?.length || 0,
+    jwtSecretPrefix: process.env.JWT_SECRET?.substring(0, 10) || 'N/A',
+    nodeEnv: process.env.NODE_ENV,
+    timestamp: new Date().toISOString(),
+  });
+  envChecked = true;
+}
 
 /**
  * App Router Middleware
@@ -37,10 +53,15 @@ export async function middleware(request: NextRequest) {
 
   // Check authentication for protected routes
   if (!isPublicRoute && pathname.startsWith('/api')) {
-    const token = request.headers.get('authorization')?.split(' ')[1];
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.split(' ')[1];
 
     if (!token) {
-      logger.warn('Missing auth token', { requestId, pathname });
+      logger.warn('Missing auth token', { 
+        requestId, 
+        pathname,
+        authHeader: authHeader ? '[present but malformed]' : '[missing]',
+      });
       return NextResponse.json(
         {
           success: false,
@@ -54,8 +75,47 @@ export async function middleware(request: NextRequest) {
       );
     }
 
+    console.log('[Middleware] Token verification start:', {
+      requestId,
+      pathname,
+      tokenLength: token.length,
+      tokenPrefix: token.substring(0, 30),
+      jwtSecretEnv: !!process.env.JWT_SECRET,
+    });
+
+    // Use debug function to get detailed info
+    const debugResult = debugVerifyToken(token);
+    const payload = debugResult.valid ? debugResult.payload : null;
+    
+    if (!payload) {
+      console.error('[Middleware] Token verification failed:', {
+        requestId,
+        pathname,
+        reason: debugResult.error || 'Token is invalid or expired',
+        tokenLength: token.length,
+      });
+      
+      logger.warn('Token verification failed', {
+        requestId,
+        pathname,
+        reason: debugResult.error || 'Token is invalid or expired',
+        tokenLength: token.length,
+      });
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'INVALID_TOKEN',
+            message: debugResult.error || 'Invalid or expired token',
+          },
+          timestamp: new Date().toISOString(),
+        },
+        { status: 401 }
+      );
+    }
+
     try {
-      const payload = verifyAccessToken(token);
       // Attach user to headers for route handler access
       const requestHeaders = new Headers(request.headers);
       requestHeaders.set('x-user-id', payload.userId);
@@ -79,7 +139,7 @@ export async function middleware(request: NextRequest) {
 
       return response;
     } catch (error) {
-      logger.error('Token verification failed', {
+      logger.error('Request processing failed', {
         requestId,
         pathname,
         error: error instanceof Error ? error.message : String(error),
@@ -89,12 +149,12 @@ export async function middleware(request: NextRequest) {
         {
           success: false,
           error: {
-            code: 'INVALID_TOKEN',
-            message: 'Invalid or expired token',
+            code: 'INTERNAL_ERROR',
+            message: 'Internal server error',
           },
           timestamp: new Date().toISOString(),
         },
-        { status: 401 }
+        { status: 500 }
       );
     }
   }

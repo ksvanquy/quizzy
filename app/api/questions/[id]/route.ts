@@ -16,14 +16,17 @@ import { validateToken } from '@/lib/guards/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  let id: string | undefined;
   try {
+    const resolved = await params;
+    id = resolved.id;
     await connectDatabase();
     const { questionRepository } = getRepositories();
     const questionService = new QuestionService(questionRepository);
 
-    const question = await questionService.getQuestionById(params.id);
+    const question = await questionService.getQuestionById(id);
 
     if (!question) {
       return sendNotFound('Question');
@@ -43,9 +46,12 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  let id: string | undefined;
   try {
+    const resolved = await params;
+    id = resolved.id;
     await connectDatabase();
 
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -57,7 +63,7 @@ export async function PUT(
     const { questionRepository } = getRepositories();
     const questionService = new QuestionService(questionRepository);
 
-    const question = await questionService.getQuestionById(params.id);
+    const question = await questionService.getQuestionById(id);
     if (!question) {
       return sendNotFound('Question');
     }
@@ -70,10 +76,10 @@ export async function PUT(
       return sendValidationError('Invalid input', fieldErrors);
     }
 
-    const updated = await questionService.updateQuestion(params.id, validation.data);
+    const updated = await questionService.updateQuestion(id, validation.data);
     const responseDto = QuestionMapper.toResponseDto(updated);
 
-    logger.info('Question updated', { questionId: params.id });
+    logger.info('Question updated', { questionId: id });
 
     return sendSuccess(responseDto, 'Question updated');
   } catch (error) {
@@ -88,9 +94,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  let id: string | undefined;
   try {
+    const resolved = await params;
+    id = resolved.id;
     await connectDatabase();
 
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -102,14 +111,14 @@ export async function DELETE(
     const { questionRepository } = getRepositories();
     const questionService = new QuestionService(questionRepository);
 
-    const question = await questionService.getQuestionById(params.id);
+    const question = await questionService.getQuestionById(id);
     if (!question) {
       return sendNotFound('Question');
     }
 
-    await questionService.deleteQuestion(params.id);
+    await questionService.deleteQuestion(id);
 
-    logger.info('Question deleted', { questionId: params.id });
+    logger.info('Question deleted', { questionId: id });
 
     return sendSuccess(null, 'Question deleted');
   } catch (error) {

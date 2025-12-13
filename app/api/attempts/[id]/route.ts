@@ -14,9 +14,12 @@ import { validateToken } from '@/lib/guards/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  let id: string | undefined;
   try {
+    const resolved = await params;
+    id = resolved.id;
     await connectDatabase();
 
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -28,7 +31,7 @@ export async function GET(
     const { attemptRepository } = getRepositories();
     const attemptService = new AttemptService(attemptRepository);
 
-    const attempt = await attemptService.getAttemptById(params.id);
+    const attempt = await attemptService.getAttemptById(id);
 
     if (!attempt) {
       return sendNotFound('Attempt');

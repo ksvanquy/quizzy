@@ -13,17 +13,21 @@ import {
 import { HTTP_STATUS } from '@/constants/http-status';
 import { logger } from '@/lib/logger/logger';
 import { validateToken } from '@/lib/guards/auth';
+import { NotFoundError } from '@/core/shared/errors';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  let id: string | undefined;
   try {
+    const resolved = await params;
+    id = resolved.id;
     await connectDatabase();
     const { quizRepository } = getRepositories();
     const quizService = new QuizService(quizRepository);
 
-    const quiz = await quizService.getQuizById(params.id);
+    const quiz = await quizService.getQuizById(id);
 
     if (!quiz) {
       return sendNotFound('Quiz');
@@ -32,7 +36,12 @@ export async function GET(
     const responseDto = QuizMapper.toResponseDto(quiz);
     return sendSuccess(responseDto);
   } catch (error) {
-    logger.error('Get quiz error', error as Error);
+    if (error instanceof NotFoundError) {
+      return sendNotFound('Quiz');
+    }
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    logger.error('Get quiz error', { id, error: errorMsg, stack: error instanceof Error ? error.stack : '' });
+    console.error('[GET /api/quizzes/[id]]', { id, error: errorMsg });
     return sendError(
       'FETCH_ERROR',
       'Failed to fetch quiz',
@@ -43,9 +52,12 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  let id: string | undefined;
   try {
+    const resolved = await params;
+    id = resolved.id;
     await connectDatabase();
 
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -58,7 +70,7 @@ export async function PUT(
     const quizService = new QuizService(quizRepository);
 
     // Check if quiz exists
-    const quiz = await quizService.getQuizById(params.id);
+    const quiz = await quizService.getQuizById(id);
     if (!quiz) {
       return sendNotFound('Quiz');
     }
@@ -71,13 +83,16 @@ export async function PUT(
       return sendValidationError('Invalid input', fieldErrors);
     }
 
-    const updated = await quizService.updateQuiz(params.id, validation.data);
+    const updated = await quizService.updateQuiz(id, validation.data);
     const responseDto = QuizMapper.toResponseDto(updated);
 
-    logger.info('Quiz updated', { quizId: params.id });
+    logger.info('Quiz updated', { quizId: id });
 
     return sendSuccess(responseDto, 'Quiz updated');
   } catch (error) {
+    if (error instanceof NotFoundError) {
+      return sendNotFound('Quiz');
+    }
     logger.error('Update quiz error', error as Error);
     return sendError(
       'UPDATE_ERROR',
@@ -89,9 +104,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  let id: string | undefined;
   try {
+    const resolved = await params;
+    id = resolved.id;
     await connectDatabase();
 
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -103,17 +121,20 @@ export async function DELETE(
     const { quizRepository } = getRepositories();
     const quizService = new QuizService(quizRepository);
 
-    const quiz = await quizService.getQuizById(params.id);
+    const quiz = await quizService.getQuizById(id);
     if (!quiz) {
       return sendNotFound('Quiz');
     }
 
-    await quizService.deleteQuiz(params.id);
+    await quizService.deleteQuiz(id);
 
-    logger.info('Quiz deleted', { quizId: params.id });
+    logger.info('Quiz deleted', { quizId: id });
 
     return sendSuccess(null, 'Quiz deleted');
   } catch (error) {
+    if (error instanceof NotFoundError) {
+      return sendNotFound('Quiz');
+    }
     logger.error('Delete quiz error', error as Error);
     return sendError(
       'DELETE_ERROR',

@@ -16,13 +16,21 @@ apiClient.addRequestInterceptor((config) => {
     if (typeof window !== 'undefined') {
       const token = window.localStorage.getItem('token');
       if (token) {
+        console.log('[API Interceptor] Attaching token:', {
+          tokenLength: token.length,
+          tokenPrefix: token.substring(0, 30),
+        });
         config.headers = {
           ...(config.headers || {}),
           Authorization: `Bearer ${token}`,
         };
+      } else {
+        console.log('[API Interceptor] No token in localStorage');
       }
     }
-  } catch {}
+  } catch (error) {
+    console.error('[API Interceptor] Error:', error);
+  }
   return config;
 });
 

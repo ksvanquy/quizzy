@@ -16,14 +16,17 @@ import { validateToken } from '@/lib/guards/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
+  let slug: string | undefined;
   try {
+    const resolved = await params;
+    slug = resolved.slug;
     await connectDatabase();
     const { categoryRepository } = getRepositories();
     const categoryService = new CategoryService(categoryRepository);
 
-    const category = await categoryService.getCategoryBySlug(params.slug);
+    const category = await categoryService.getCategoryBySlug(slug);
 
     if (!category) {
       return sendNotFound('Category');
@@ -43,9 +46,12 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
+  let slug: string | undefined;
   try {
+    const resolved = await params;
+    slug = resolved.slug;
     await connectDatabase();
 
     // Check authorization
@@ -68,7 +74,7 @@ export async function PUT(
     }
 
     // Get category by slug
-    const category = await categoryService.getCategoryBySlug(params.slug);
+    const category = await categoryService.getCategoryBySlug(slug);
     if (!category) {
       return sendNotFound('Category');
     }
@@ -92,9 +98,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
+  let slug: string | undefined;
   try {
+    const resolved = await params;
+    slug = resolved.slug;
     await connectDatabase();
 
     // Check authorization
@@ -108,7 +117,7 @@ export async function DELETE(
     const categoryService = new CategoryService(categoryRepository);
 
     // Get category by slug
-    const category = await categoryService.getCategoryBySlug(params.slug);
+    const category = await categoryService.getCategoryBySlug(slug);
     if (!category) {
       return sendNotFound('Category');
     }

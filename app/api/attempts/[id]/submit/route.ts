@@ -13,7 +13,8 @@ export async function POST(
   return withAuth(request, async (req, payload) => {
     try {
       await connectDB();
-      const { id } = await params;
+      const resolved = await params;
+      const id = resolved.id;
 
       const attempt = await Attempt.findById(id);
       if (!attempt) {

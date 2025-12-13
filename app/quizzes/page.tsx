@@ -31,13 +31,24 @@ export default function QuizzesPage() {
         const catsRes = await fetch('/api/categories');
         if (catsRes.ok) {
           const catsData = await catsRes.json();
-          setAllCategories(catsData.data || []);
+          // API returns { success, data: { items, total, page, limit } }
+          const categories = catsData.data?.items || catsData.data || [];
+          setAllCategories(Array.isArray(categories) ? categories : []);
         }
 
         const quizzesRes = await fetch('/api/quizzes');
         if (quizzesRes.ok) {
           const quizzesData = await quizzesRes.json();
-          setQuizzes(quizzesData.data?.quizzes || quizzesData.data || []);
+          // API returns { success, data: { items, total, page, limit } } or { success, data: [...] }
+          let quizList = [];
+          if (quizzesData.data?.items) {
+            quizList = quizzesData.data.items;
+          } else if (Array.isArray(quizzesData.data)) {
+            quizList = quizzesData.data;
+          } else if (quizzesData.data?.quizzes) {
+            quizList = quizzesData.data.quizzes;
+          }
+          setQuizzes(Array.isArray(quizList) ? quizList : []);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -134,9 +145,11 @@ export default function QuizzesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredQuizzes.map(quiz => (
-              <QuizCard key={quiz._id} quiz={quiz} />
-            ))}
+            {filteredQuizzes.map((quiz, index) => {
+              // Ensure unique key: use _id if available and unique, fallback to slug or index
+              const key = quiz._id || quiz.slug || `quiz-${index}`;
+              return <QuizCard key={key} quiz={quiz} />;
+            })}
           </div>
         )}
       </main>

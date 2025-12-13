@@ -44,6 +44,13 @@ export async function POST(request: NextRequest) {
 
     const responseDto = AuthMapper.toAuthResponseDto(result.user, result.accessToken, result.refreshToken);
 
+    console.log('[Login Response]', {
+      userId: result.user.id,
+      accessToken: result.accessToken.substring(0, 20) + '...',
+      refreshToken: result.refreshToken.substring(0, 20) + '...',
+      response: responseDto,
+    });
+
     logger.info('User login successful', { userId: result.user.id });
 
     return sendSuccess(responseDto, 'Login successful', HTTP_STATUS.OK);

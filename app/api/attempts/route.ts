@@ -53,3 +53,39 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    await connectDatabase();
+
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    const payload = validateToken(token || '');
+    if (!payload) {
+      return sendUnauthorized('Authorization required');
+    }
+
+    const body = await request.json();
+    const { quizId } = body;
+
+    if (!quizId) {
+      return sendValidationError('Invalid input', { quizId: ['quizId is required'] });
+    }
+
+    const { attemptRepository } = getRepositories();
+    const attemptService = new AttemptService(attemptRepository);
+
+    const attempt = await attemptService.startAttempt(payload.userId, quizId);
+    const responseDto = AttemptMapper.toResponseDto(attempt);
+
+    logger.info('Attempt created', { quizId, userId: payload.userId });
+
+    return sendSuccess(responseDto, 'Attempt created', HTTP_STATUS.CREATED);
+  } catch (error) {
+    logger.error('Create attempt error', error as Error);
+    return sendError(
+      'CREATE_ERROR',
+      'Failed to create attempt',
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
+  }
+}
