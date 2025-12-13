@@ -13,11 +13,13 @@
     "axios": "^1.6.0",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
+    "logger": "^0.0.1",
     "mongoose": "^8.20.1",
     "next": "16.0.7",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "react-hook-form": "^7.68.0"
+    "react-hook-form": "^7.68.0",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

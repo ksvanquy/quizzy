@@ -1,21 +1,30 @@
 import { NextRequest } from 'next/server';
-import { connectDB } from '@/lib/db';
-import { User } from '@/lib/models/User';
-import { hashPassword, comparePassword } from '@/lib/utils/password';
-import { generateToken } from '@/lib/utils/jwt';
-import { sendSuccess, sendError } from '@/lib/utils/api';
-import { validateEmail } from '@/lib/utils/helpers';
+import { connectDatabase, getRepositories } from '@/infrastructure/persistence/database';
+import { AuthService } from '@/core/auth/auth.service';
+import { AuthMapper } from '@/core/auth/dto/auth.mapper';
+import { registerSchema } from '@/core/shared/validation/schemas';
+import {
+  sendSuccess,
+  sendError,
+  sendValidationError,
+  sendConflict,
+} from '@/lib/api-response';
+import { HTTP_STATUS } from '@/constants/http-status';
+import { logger } from '@/lib/logger/logger';
 
 export async function POST(request: NextRequest) {
   try {
-    await connectDB();
+    await connectDatabase();
+    const { userRepository } = getRepositories();
+    const authService = new AuthService(userRepository);
 
     const body = await request.json();
-    const { username, email, password, name } = body;
 
-    // Validation
-    if (!username || !email || !password || !name) {
-      return sendError('All fields are required', 400);
+    // Validate request
+    const validation = registerSchema.safeParse(body);
+    if (!validation.success) {
+      const fieldErrors = validation.error.flatten().fieldErrors;
+      return sendValidationError('Invalid input', fieldErrors);
     }
 
     if (!validateEmail(email)) {

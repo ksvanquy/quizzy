@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { connectDatabase, getRepositories } from '@/infrastructure/persistence/database';
 import { AuthService } from '@/core/auth/auth.service';
 import { AuthMapper } from '@/core/auth/dto/auth.mapper';
-import { loginSchema } from '@/core/shared/validation/schemas';
+import { refreshTokenSchema } from '@/core/shared/validation/schemas';
 import {
   sendSuccess,
   sendError,
@@ -11,6 +11,7 @@ import {
 } from '@/lib/api-response';
 import { HTTP_STATUS } from '@/constants/http-status';
 import { logger } from '@/lib/logger/logger';
+import { validateToken } from '@/lib/guards/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,26 +22,35 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Validate request
-    const validation = loginSchema.safeParse(body);
+    const validation = refreshTokenSchema.safeParse(body);
     if (!validation.success) {
       const fieldErrors = validation.error.flatten().fieldErrors;
       return sendValidationError('Invalid input', fieldErrors);
     }
 
-    // Authenticate user
-    const result = await authService.login(validation.data);
-
-    if (!result) {
-      return sendUnauthorized('Invalid credentials');
+    // Verify and refresh token
+    const decoded = validateToken(validation.data.refreshToken);
+    if (!decoded) {
+      return sendUnauthorized('Invalid refresh token');
     }
 
-    const responseDto = AuthMapper.toLoginResponseDto(result);
+    const result = await authService.refreshToken(decoded.userId);
 
-    logger.info('User login successful', { userId: result.user.id });
+    if (!result) {
+      return sendUnauthorized('User not found');
+    }
 
-    return sendSuccess(responseDto, 'Login successful', HTTP_STATUS.OK);
+    const responseDto = AuthMapper.toRefreshResponseDto(result);
+
+    logger.info('Token refreshed successfully', { userId: decoded.userId });
+
+    return sendSuccess(responseDto, 'Token refreshed', HTTP_STATUS.OK);
   } catch (error) {
-    console.error('Login error:', error);
-    return sendError('Internal server error', 500);
+    logger.error('Refresh token error', error as Error);
+    return sendError(
+      'REFRESH_ERROR',
+      'An error occurred during token refresh',
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
   }
 }
