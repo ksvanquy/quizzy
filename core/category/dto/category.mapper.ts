@@ -10,7 +10,7 @@ export class CategoryMapper {
    */
   static toResponseDto(category: Category): CategoryResponseDto {
     return {
-      id: category.id,
+      _id: category.id,
       name: category.name,
       slug: category.slug,
       description: category.description,
@@ -30,7 +30,7 @@ export class CategoryMapper {
     category: Category & { children?: Category[] }
   ): CategoryWithChildrenDto {
     return {
-      id: category.id,
+      _id: category.id,
       name: category.name,
       slug: category.slug,
       description: category.description,

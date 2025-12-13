@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Header } from '@/app/components/home/Header';
 import { CategoryNav } from '@/app/components/home/CategoryNav';
@@ -17,23 +17,48 @@ interface Category {
   icon?: string;
 }
 
+interface CategoryTree {
+  parent: Category;
+  children: Category[];
+}
+
 export default function QuizzesPage() {
-  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [quizzes, setQuizzes] = useState<any[]>([]);
   const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [filteredQuizzes, setFilteredQuizzes] = useState<any[]>([]);
 
+  // Flatten categories into tree structure
+  const categoryTree = useMemo(() => {
+    const parents = categories.filter(cat => cat.parentId === null);
+    return parents.map(parent => ({
+      parent,
+      children: categories.filter(cat => cat.parentId === parent._id)
+    }));
+  }, [categories]);
+
+  const parentCategories = useMemo(() => 
+    categoryTree.map(tree => tree.parent), 
+    [categoryTree]
+  );
+
+  const childCategories = useMemo(() => {
+    if (!selectedParentId) return [];
+    const tree = categoryTree.find(t => t.parent._id === selectedParentId);
+    return tree ? tree.children : [];
+  }, [categoryTree, selectedParentId]);
+
   useEffect(() => {
     async function fetchData() {
       try {
-        const catsRes = await fetch('/api/categories');
+        const catsRes = await fetch('/api/categories?limit=100');
         if (catsRes.ok) {
           const catsData = await catsRes.json();
           // API returns { success, data: { items, total, page, limit } }
-          const categories = catsData.data?.items || catsData.data || [];
-          setAllCategories(Array.isArray(categories) ? categories : []);
+        const cats = catsData.data?.items || catsData.data || [];
+        setCategories(Array.isArray(cats) ? cats : []);
         }
 
         const quizzesRes = await fetch('/api/quizzes');
@@ -60,22 +85,9 @@ export default function QuizzesPage() {
     fetchData();
   }, []);
 
-  // Separate parent and child categories
-  const parentCategories = allCategories.filter(cat => cat.parentId === null);
-  
   // Debug log
-  console.log('All Categories:', allCategories);
-  console.log('Parent Categories:', parentCategories);
+  console.log('Category Tree:', categoryTree);
   console.log('Selected Parent ID:', selectedParentId);
-  
-  const childCategories = selectedParentId
-    ? allCategories.filter(cat => {
-        console.log('Filtering children for parent:', selectedParentId);
-        console.log('Checking cat:', cat, 'parentId:', cat.parentId);
-        return cat.parentId === selectedParentId;
-      })
-    : [];
-  
   console.log('Child Categories:', childCategories);
 
   // Get child IDs for filtering

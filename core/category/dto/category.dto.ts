@@ -27,7 +27,7 @@ export interface MoveCategoryDto {
 
 // Category Response DTO
 export interface CategoryResponseDto {
-  id: string;
+  _id: string;
   name: string;
   slug: string;
   description?: string;
