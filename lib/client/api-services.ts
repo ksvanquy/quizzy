@@ -10,6 +10,22 @@ export const apiClient = new HttpClient(
   process.env.NEXT_PUBLIC_API_URL || '/api'
 );
 
+// Attach auth header via request interceptor
+apiClient.addRequestInterceptor((config) => {
+  try {
+    if (typeof window !== 'undefined') {
+      const token = window.localStorage.getItem('token');
+      if (token) {
+        config.headers = {
+          ...(config.headers || {}),
+          Authorization: `Bearer ${token}`,
+        };
+      }
+    }
+  } catch {}
+  return config;
+});
+
 /**
  * User API Service
  */

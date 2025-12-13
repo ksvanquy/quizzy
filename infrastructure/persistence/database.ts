@@ -36,6 +36,10 @@ export async function connectDatabase(): Promise<void> {
   try {
     if (mongoose.connection.readyState === 1) {
       logger.debug('Already connected to MongoDB');
+      // Ensure repositories are initialized even if already connected
+      if (!userRepository || !categoryRepository) {
+        initializeRepositories();
+      }
       return;
     }
 

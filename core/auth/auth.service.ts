@@ -71,32 +71,47 @@ export class AuthService {
    * Login user
    */
   async login(email: string, password: string): Promise<{ user: User; accessToken: string; refreshToken: string }> {
+    console.log('[AuthService] Login attempt:', { email, passwordLength: password?.length });
+    
     // Validate email format
     if (!REGEX_PATTERNS.EMAIL.test(email)) {
+      console.log('[AuthService] Invalid email format');
       throw new Error('Invalid email format');
     }
 
     // Find user by email
     const user = await this.userRepository.findByEmail(email);
+    console.log('[AuthService] User found:', user ? { 
+      id: user.id, 
+      email: user.email, 
+      isActive: user.isActive,
+      hasPassword: !!user.password,
+      passwordLength: user.password?.length 
+    } : null);
+    
     if (!user) {
       throw new UnauthorizedError('Invalid email or password');
     }
 
     // Check if user is active
     if (!user.isActive) {
+      console.log('[AuthService] User inactive');
       throw new UnauthorizedError('User account is inactive');
     }
 
     // Verify password
+    console.log('[AuthService] Checking password...');
     const isValidPassword = await comparePassword(password, user.password);
+    console.log('[AuthService] Password valid:', isValidPassword);
+    
     if (!isValidPassword) {
       throw new UnauthorizedError('Invalid email or password');
     }
 
-    // Update last login
-    await this.userRepository.update(user.id, {
-      lastLogin: new Date(),
-    });
+    // Update last login (skip for now - seed data uses string IDs)
+    // await this.userRepository.update(user.id, {
+    //   lastLogin: new Date(),
+    // });
 
     // Generate tokens
     const tokenPayload = { userId: user.id, email: user.email, role: user.role };
@@ -130,10 +145,10 @@ export class AuthService {
       throw new UnauthorizedError('Invalid username or password');
     }
 
-    // Update last login
-    await this.userRepository.update(user.id, {
-      lastLogin: new Date(),
-    });
+    // Update last login (skip for now - seed data uses string IDs)
+    // await this.userRepository.update(user.id, {
+    //   lastLogin: new Date(),
+    // });
 
     // Generate tokens
     const tokenPayload = { userId: user.id, email: user.email, role: user.role };

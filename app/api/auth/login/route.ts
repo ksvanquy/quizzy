@@ -47,8 +47,19 @@ export async function POST(request: NextRequest) {
     logger.info('User login successful', { userId: result.user.id });
 
     return sendSuccess(responseDto, 'Login successful', HTTP_STATUS.OK);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error);
+    
+    // Handle specific error types
+    if (error.code === 'UNAUTHORIZED') {
+      return sendUnauthorized(error.message || 'Invalid credentials');
+    }
+    
+    if (error.code === 'CONFLICT') {
+      return sendError(error.message || 'Conflict', 409);
+    }
+    
+    logger.error('Login error', { error: error.message });
     return sendError('Internal server error', 500);
   }
 }

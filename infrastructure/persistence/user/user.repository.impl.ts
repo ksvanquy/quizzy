@@ -32,12 +32,12 @@ export class UserRepository implements IUserRepository {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    const user = await this.userModel.findOne({ email }).lean();
+    const user = await this.userModel.findOne({ email }).select('+password').lean();
     return user ? this.mapToEntity(user) : null;
   }
 
   async findByUsername(username: string): Promise<User | null> {
-    const user = await this.userModel.findOne({ username }).lean();
+    const user = await this.userModel.findOne({ username }).select('+password').lean();
     return user ? this.mapToEntity(user) : null;
   }
 

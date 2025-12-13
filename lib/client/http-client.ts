@@ -82,7 +82,14 @@ export class HttpClient {
    * Build URL with query parameters
    */
   private buildUrl(path: string, params?: Record<string, any>): string {
-    const url = new URL(path, this.baseURL || window.location.origin);
+    // Support relative base like '/api' by resolving against window.origin
+    let base = this.baseURL;
+    if (typeof window !== 'undefined') {
+      const origin = window.location.origin;
+      if (!base) base = origin;
+      else if (base.startsWith('/')) base = origin + base;
+    }
+    const url = new URL(path, base);
 
     if (params) {
       Object.entries(params).forEach(([key, value]) => {

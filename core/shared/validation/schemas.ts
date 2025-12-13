@@ -195,7 +195,9 @@ export const matchingQuestionSchema = createQuestionBaseSchema.extend({
   type: z.literal('matching'),
   leftItemIds: z.array(z.string()).min(2, 'Must have at least 2 left items'),
   rightItemIds: z.array(z.string()).min(2, 'Must have at least 2 right items'),
-  correctPairs: z.record(z.string(), z.string()).min(1, 'Must have at least 1 correct pair'),
+  correctPairs: z.record(z.string(), z.string()).refine((pairs) => Object.keys(pairs).length >= 1, {
+    message: 'Must have at least 1 correct pair',
+  }),
 });
 
 export const createQuestionSchema = z.union([

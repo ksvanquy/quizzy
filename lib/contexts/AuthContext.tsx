@@ -58,10 +58,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }),
       }) as any;
 
-      setUser(response.user);
-      setToken(response.token);
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      // API returns { success: true, data: { user, accessToken, refreshToken, ... } }
+      const authData = response.data || response;
+      const user = authData.user;
+      const token = authData.accessToken || authData.token;
+      
+      setUser(user);
+      setToken(token);
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      // Also store refresh token if available
+      if (authData.refreshToken) {
+        localStorage.setItem('refreshToken', authData.refreshToken);
+      }
     },
     []
   );
@@ -72,10 +82,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({ email, password }),
     }) as any;
 
-    setUser(response.user);
-    setToken(response.token);
-    localStorage.setItem('token', response.token);
-    localStorage.setItem('user', JSON.stringify(response.user));
+    // API returns { success: true, data: { user, accessToken, refreshToken, ... } }
+    const authData = response.data || response;
+    const user = authData.user;
+    const token = authData.accessToken || authData.token;
+    
+    setUser(user);
+    setToken(token);
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    
+    // Also store refresh token if available
+    if (authData.refreshToken) {
+      localStorage.setItem('refreshToken', authData.refreshToken);
+    }
   }, []);
 
   const logout = useCallback(() => {
