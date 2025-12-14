@@ -78,12 +78,42 @@ export default function HomePage() {
     fetchData();
   }, [token]);
 
+  // Calculate quiz count for each category
+  const categoriesWithCount = allCategories.map(cat => {
+    let count = 0;
+    
+    if (cat.parentId === null) {
+      // For parent categories, count quizzes from all child categories
+      const childCats = allCategories.filter(c => c.parentId === cat._id);
+      if (childCats.length > 0) {
+        const childIds = childCats.map(c => c._id);
+        count = quizzes.filter(q => {
+          const qCatId = q.categoryId || (typeof q.category === 'string' ? q.category : q.category?._id);
+          return childIds.includes(qCatId);
+        }).length;
+      } else {
+        // Parent without children - count directly
+        count = quizzes.filter(q => {
+          const qCatId = q.categoryId || (typeof q.category === 'string' ? q.category : q.category?._id);
+          return qCatId === cat._id;
+        }).length;
+      }
+    } else {
+      // For child categories, count directly
+      count = quizzes.filter(q => {
+        const qCatId = q.categoryId || (typeof q.category === 'string' ? q.category : q.category?._id);
+        return qCatId === cat._id;
+      }).length;
+    }
+    
+    return { ...cat, quizCount: count };
+  });
+
   // Separate parent and child categories
-  const parentCategories = Array.isArray(allCategories) ? allCategories.filter(cat => cat.parentId === null) : [];
+  const parentCategories = Array.isArray(categoriesWithCount) ? categoriesWithCount.filter(cat => cat.parentId === null) : [];
   const childCategories = selectedParentId
-    ? (Array.isArray(allCategories) ? allCategories.filter(cat => {
-        const parentCat = Array.isArray(allCategories) ? allCategories.find(p => p._id === selectedParentId) : undefined;
-        return parentCat && cat.parentId === parentCat.displayOrder;
+    ? (Array.isArray(categoriesWithCount) ? categoriesWithCount.filter(cat => {
+        return cat.parentId === selectedParentId;
       }) : [])
     : [];
 
@@ -95,7 +125,7 @@ export default function HomePage() {
   if (selectedChildId) {
     // Filter by specific child category
     filteredQuizzes = quizzes.filter(q => {
-      const catId = typeof q.category === 'string' ? q.category : q.category?._id;
+      const catId = q.categoryId || (typeof q.category === 'string' ? q.category : q.category?._id);
       return catId === selectedChildId;
     });
   } else if (selectedParentId) {
@@ -104,19 +134,19 @@ export default function HomePage() {
     
     if (parentCat) {
       // Get all child categories of this parent
-      const childCats = allCategories.filter(cat => cat.parentId === parentCat.displayOrder);
+      const childCats = allCategories.filter(cat => cat.parentId === parentCat._id);
       
       if (childCats.length > 0) {
         // If parent has children, show quizzes from all children
         const childIds = childCats.map(c => c._id);
         filteredQuizzes = quizzes.filter(q => {
-          const catId = typeof q.category === 'string' ? q.category : q.category?._id;
+          const catId = q.categoryId || (typeof q.category === 'string' ? q.category : q.category?._id);
           return childIds.includes(catId);
         });
       } else {
         // If parent has no children, show quizzes directly under this parent
         filteredQuizzes = quizzes.filter(q => {
-          const catId = typeof q.category === 'string' ? q.category : q.category?._id;
+          const catId = q.categoryId || (typeof q.category === 'string' ? q.category : q.category?._id);
           return catId === selectedParentId;
         });
       }

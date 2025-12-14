@@ -32,10 +32,6 @@ export function CategoryNav({
   onShowAll,
   totalQuizCount,
 }: CategoryNavProps) {
-  // Debug log
-  console.log('CategoryNav - Parent Categories:', parentCategories);
-  console.log('CategoryNav - Child Categories:', childCategories);
-  
   return (
     <>
       {/* Parent Categories - Horizontal Scroll */}
