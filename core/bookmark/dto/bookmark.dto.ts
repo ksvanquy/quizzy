@@ -4,8 +4,8 @@
 
 // Bookmark Response DTO
 export interface BookmarkResponseDto {
-  id: string;
+  _id: string;
   userId: string;
-  quizId: string;
+  quizId: any; // Can be string or populated quiz object
   createdAt: Date;
 }

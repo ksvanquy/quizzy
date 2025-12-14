@@ -9,10 +9,13 @@ export class WatchlistMapper {
    * Convert Watchlist entity to WatchlistResponseDto
    */
   static toResponseDto(watchlist: Watchlist): WatchlistResponseDto {
+    // Handle both populated and unpopulated quizId
+    const quizId = typeof watchlist.quizId === 'object' ? watchlist.quizId : { _id: watchlist.quizId };
+    
     return {
-      id: watchlist.id,
+      _id: watchlist.id,
       userId: watchlist.userId,
-      quizId: watchlist.quizId,
+      quizId: quizId,
       createdAt: watchlist.createdAt,
     };
   }

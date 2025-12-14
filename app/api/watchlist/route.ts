@@ -1,7 +1,9 @@
 import { NextRequest } from 'next/server';
+import { Types } from 'mongoose';
 import { connectDatabase, getRepositories } from '@/infrastructure/persistence/database';
 import { WatchlistService } from '@/core/watchlist/watchlist.service';
 import { WatchlistMapper } from '@/core/watchlist/dto/watchlist.mapper';
+import { QuizMapper } from '@/core/quiz/dto/quiz.mapper';
 import { paginationSchema } from '@/core/shared/validation/schemas';
 import {
   sendSuccess,
@@ -37,7 +39,37 @@ export async function GET(request: NextRequest) {
     }
 
     const result = await watchlistService.getWatchlistByUser(payload.userId, page, limit);
-    const items = result.items.map((watchlist) => WatchlistMapper.toResponseDto(watchlist));
+    const quizIds = Array.from(new Set(result.items.map((w) => w.quizId)));
+    const { quizRepository } = getRepositories();
+
+    const quizzes = await Promise.all(
+      quizIds.map(async (qid) => {
+        if (!qid) return null;
+        if (Types.ObjectId.isValid(qid)) {
+          const byId = await quizRepository.findById(qid);
+          if (byId) return byId;
+        }
+        return await quizRepository.findBySlug(qid);
+      })
+    );
+
+    const quizMap = new Map<string, any>();
+    quizzes.forEach((quiz, idx) => {
+      if (quiz) {
+        quizMap.set(quizIds[idx], QuizMapper.toResponseDto(quiz));
+      }
+    });
+
+    const items = result.items.map((watchlist) => {
+      const quiz = quizMap.get(watchlist.quizId);
+      const normalizedQuiz = quiz ? { _id: quiz.id, ...quiz } : watchlist.quizId;
+      return {
+        _id: (watchlist as any)._id ?? watchlist.id,
+        userId: watchlist.userId,
+        quizId: normalizedQuiz,
+        createdAt: (watchlist as any).createdAt,
+      };
+    });
 
     return sendSuccess(
       { items, total: result.total, page, limit },
@@ -89,6 +121,43 @@ export async function POST(request: NextRequest) {
     return sendError(
       'CREATE_ERROR',
       'Failed to add to watchlist',
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    await connectDatabase();
+
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    const payload = validateToken(token || '');
+    if (!payload) {
+      return sendUnauthorized('Authorization required');
+    }
+
+    const { watchlistRepository } = getRepositories();
+    const watchlistService = new WatchlistService(watchlistRepository);
+
+    // Get quizId from URL path or query params
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const quizId = pathParts[pathParts.length - 1] || url.searchParams.get('quizId');
+
+    if (!quizId || quizId === 'watchlist') {
+      return sendError('VALIDATION_ERROR', 'quizId is required', HTTP_STATUS.BAD_REQUEST);
+    }
+
+    await watchlistService.removeFromWatchlist(payload.userId, quizId);
+
+    logger.info('Removed from watchlist', { userId: payload.userId, quizId });
+
+    return sendSuccess(null, 'Removed from watchlist', HTTP_STATUS.OK);
+  } catch (error) {
+    logger.error('Remove from watchlist error', error as Error);
+    return sendError(
+      'DELETE_ERROR',
+      'Failed to remove from watchlist',
       HTTP_STATUS.INTERNAL_SERVER_ERROR
     );
   }

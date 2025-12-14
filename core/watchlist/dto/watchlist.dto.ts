@@ -4,8 +4,8 @@
 
 // Watchlist Response DTO
 export interface WatchlistResponseDto {
-  id: string;
+  _id: string;
   userId: string;
-  quizId: string;
+  quizId: any; // Can be string or populated quiz object
   createdAt: Date;
 }

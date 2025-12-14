@@ -13,7 +13,7 @@ interface BookmarkedQuiz {
     description: string;
     difficulty: string;
     totalPoints: number;
-    category: { name: string };
+    categoryId?: { name: string; slug: string };
   };
   createdAt: string;
 }
@@ -36,8 +36,9 @@ export default function BookmarksPage() {
         
         if (!res.ok) throw new Error('Failed to fetch bookmarks');
         
-        const data = await res.json();
-        setBookmarks(data.items || []);
+        const result = await res.json();
+        const items = result.data?.items || result.items || [];
+        setBookmarks(items);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load bookmarks');
       } finally {
@@ -137,8 +138,12 @@ export default function BookmarksPage() {
                     </span>
                     <span>•</span>
                     <span>{bookmark.quizId.totalPoints} điểm</span>
-                    <span>•</span>
-                    <span>{bookmark.quizId.category.name}</span>
+                    {bookmark.quizId.categoryId?.name && (
+                      <>
+                        <span>•</span>
+                        <span>{bookmark.quizId.categoryId.name}</span>
+                      </>
+                    )}
                   </div>
 
                   <button

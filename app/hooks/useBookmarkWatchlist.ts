@@ -19,8 +19,16 @@ export function useBookmarkWatchlist() {
         await apiClient.delete(`/bookmarks/${quizId}`);
         return false;
       }
+
       await apiClient.post('/bookmarks', { quizId });
       return true;
+    } catch (err: any) {
+      // If already bookmarked, treat as still bookmarked to keep UI consistent
+      const message = typeof err?.message === 'string' ? err.message : '';
+      if (message.includes('already bookmarked')) {
+        return true;
+      }
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -33,8 +41,15 @@ export function useBookmarkWatchlist() {
         await apiClient.delete(`/watchlist/${quizId}`);
         return false;
       }
+
       await apiClient.post('/watchlist', { quizId });
       return true;
+    } catch (err: any) {
+      const message = typeof err?.message === 'string' ? err.message : '';
+      if (message.includes('already in user watchlist') || message.includes('already in watchlist')) {
+        return true;
+      }
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -44,7 +59,8 @@ export function useBookmarkWatchlist() {
     setLoading(true);
     try {
       const response = await apiClient.get('/bookmarks');
-      return response.data?.items || [];
+      const data = response.data;
+      return data?.items || data?.bookmarks || [];
     } finally {
       setLoading(false);
     }
@@ -54,7 +70,8 @@ export function useBookmarkWatchlist() {
     setLoading(true);
     try {
       const response = await apiClient.get('/watchlist');
-      return response.data?.items || [];
+      const data = response.data;
+      return data?.items || data?.watchlist || [];
     } finally {
       setLoading(false);
     }

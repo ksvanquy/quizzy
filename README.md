@@ -149,7 +149,7 @@ Khi click vào menu người dùng (👤), bạn sẽ thấy các tùy chọn:
 ```bash
 git status
 git add .
-git commit -m "main"
+git commit -m "category nav"
 git push
 ```
 

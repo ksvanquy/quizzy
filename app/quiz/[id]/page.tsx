@@ -67,12 +67,14 @@ export default function QuizDetailPage() {
           watchlistApi.getWatchlist(),
         ]);
 
-        const bookmarkIds = (bookmarksRes?.data?.bookmarks || []).map((b: any) =>
+        const bookmarkItems = bookmarksRes?.data?.items || bookmarksRes?.data?.bookmarks || [];
+        const bookmarkIds = bookmarkItems.map((b: any) =>
           typeof b.quizId === 'string' ? b.quizId : b.quizId?._id
         );
         setIsBookmarked(bookmarkIds.includes(routeQuizId));
 
-        const watchlistIds = (watchlistRes?.data?.watchlist || []).map((w: any) =>
+        const watchlistItems = watchlistRes?.data?.items || watchlistRes?.data?.watchlist || [];
+        const watchlistIds = watchlistItems.map((w: any) =>
           typeof w.quizId === 'string' ? w.quizId : w.quizId?._id
         );
         setIsInWatchlist(watchlistIds.includes(routeQuizId));

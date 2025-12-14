@@ -75,7 +75,6 @@ export class BookmarkRepository implements IBookmarkRepository {
       userId: doc.userId,
       quizId: doc.quizId,
       createdAt: doc.createdAt,
-      updatedAt: doc.updatedAt,
     };
   }
 }

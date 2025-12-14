@@ -52,21 +52,21 @@ export function verifyToken(token: string): TokenPayload | null {
   try {
     const secret = process.env.JWT_SECRET || 'secret';
     
-    console.log('[JWT.verifyToken] Verifying token with:', {
-      secretLength: secret.length,
-      secretPrefix: secret.substring(0, 10),
-      tokenLength: token?.length,
-      tokenPrefix: token?.substring(0, 30),
-      nodeEnv: process.env.NODE_ENV,
-    });
+    // console.log('[JWT.verifyToken] Verifying token with:', {
+    //   secretLength: secret.length,
+    //   secretPrefix: secret.substring(0, 10),
+    //   tokenLength: token?.length,
+    //   tokenPrefix: token?.substring(0, 30),
+    //   nodeEnv: process.env.NODE_ENV,
+    // });
     
     const payload = jwt.verify(token, secret) as TokenPayload;
     
-    console.log('[JWT.verifyToken] Token verified successfully:', {
-      userId: payload.userId,
-      email: payload.email,
-      role: payload.role,
-    });
+    // console.log('[JWT.verifyToken] Token verified successfully:', {
+    //   userId: payload.userId,
+    //   email: payload.email,
+    //   role: payload.role,
+    // });
     
     return payload;
   } catch (error) {
@@ -110,11 +110,11 @@ export function decodeToken(token: string): TokenPayload | null {
 export function debugVerifyToken(token: string): { valid: boolean; payload: TokenPayload | null; error?: string } {
   try {
     const decoded = jwt.decode(token, { complete: true }) as any;
-    console.log('[JWT.debugVerifyToken] Token structure:', {
-      header: decoded?.header,
-      payload: decoded?.payload,
-      timestamp: new Date().toISOString(),
-    });
+    // console.log('[JWT.debugVerifyToken] Token structure:', {
+    //   header: decoded?.header,
+    //   payload: decoded?.payload,
+    //   timestamp: new Date().toISOString(),
+    // });
 
     const payload = verifyToken(token);
     return { valid: !!payload, payload, error: undefined };

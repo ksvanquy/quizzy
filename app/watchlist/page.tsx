@@ -13,7 +13,7 @@ interface WatchlistQuiz {
     description: string;
     difficulty: string;
     totalPoints: number;
-    category: { name: string };
+    categoryId?: { name: string; slug: string };
   };
   createdAt: string;
 }
@@ -27,15 +27,26 @@ export default function WatchlistPage() {
   useEffect(() => {
     const fetchWatchlist = async () => {
       try {
-        const data = await getWatchlist();
-        setWatchlist(data);
+        const res = await fetch('/api/watchlist', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+          },
+        });
+        
+        if (!res.ok) throw new Error('Failed to fetch watchlist');
+        
+        const result = await res.json();
+        const items = result.data?.items || result.items || [];
+        setWatchlist(items);
+      } catch (err) {
+        console.error('Error fetching watchlist:', err);
       } finally {
         setPageLoading(false);
       }
     };
 
     fetchWatchlist();
-  }, [getWatchlist]);
+  }, []);
 
   const handleRemoveFromWatchlist = async (quizId: string) => {
     await toggleWatchlist(quizId, true);
@@ -126,8 +137,12 @@ export default function WatchlistPage() {
                     </span>
                     <span>•</span>
                     <span>{item.quizId.totalPoints} điểm</span>
-                    <span>•</span>
-                    <span>{item.quizId.category.name}</span>
+                    {item.quizId.categoryId?.name && (
+                      <>
+                        <span>•</span>
+                        <span>{item.quizId.categoryId.name}</span>
+                      </>
+                    )}
                   </div>
 
                   <button

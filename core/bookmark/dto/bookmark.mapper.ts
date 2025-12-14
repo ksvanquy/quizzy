@@ -9,10 +9,13 @@ export class BookmarkMapper {
    * Convert Bookmark entity to BookmarkResponseDto
    */
   static toResponseDto(bookmark: Bookmark): BookmarkResponseDto {
+    // Handle both populated and unpopulated quizId
+    const quizId = typeof bookmark.quizId === 'object' ? bookmark.quizId : { _id: bookmark.quizId };
+    
     return {
-      id: bookmark.id,
+      _id: bookmark.id,
       userId: bookmark.userId,
-      quizId: bookmark.quizId,
+      quizId: quizId,
       createdAt: bookmark.createdAt,
     };
   }

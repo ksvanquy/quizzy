@@ -11,13 +11,13 @@ const logger = getLogger('middleware');
 // Check env on first run
 let envChecked = false;
 if (!envChecked) {
-  console.log('[Middleware Init] Environment check:', {
-    jwtSecretSet: !!process.env.JWT_SECRET,
-    jwtSecretLength: process.env.JWT_SECRET?.length || 0,
-    jwtSecretPrefix: process.env.JWT_SECRET?.substring(0, 10) || 'N/A',
-    nodeEnv: process.env.NODE_ENV,
-    timestamp: new Date().toISOString(),
-  });
+  // console.log('[Middleware Init] Environment check:', {
+  //   jwtSecretSet: !!process.env.JWT_SECRET,
+  //   jwtSecretLength: process.env.JWT_SECRET?.length || 0,
+  //   jwtSecretPrefix: process.env.JWT_SECRET?.substring(0, 10) || 'N/A',
+  //   nodeEnv: process.env.NODE_ENV,
+  //   timestamp: new Date().toISOString(),
+  // });
   envChecked = true;
 }
 
@@ -75,25 +75,25 @@ export async function middleware(request: NextRequest) {
       );
     }
 
-    console.log('[Middleware] Token verification start:', {
-      requestId,
-      pathname,
-      tokenLength: token.length,
-      tokenPrefix: token.substring(0, 30),
-      jwtSecretEnv: !!process.env.JWT_SECRET,
-    });
+    // console.log('[Middleware] Token verification start:', {
+    //   requestId,
+    //   pathname,
+    //   tokenLength: token.length,
+    //   tokenPrefix: token.substring(0, 30),
+    //   jwtSecretEnv: !!process.env.JWT_SECRET,
+    // });
 
     // Use debug function to get detailed info
     const debugResult = debugVerifyToken(token);
     const payload = debugResult.valid ? debugResult.payload : null;
     
     if (!payload) {
-      console.error('[Middleware] Token verification failed:', {
-        requestId,
-        pathname,
-        reason: debugResult.error || 'Token is invalid or expired',
-        tokenLength: token.length,
-      });
+      // console.error('[Middleware] Token verification failed:', {
+      //   requestId,
+      //   pathname,
+      //   reason: debugResult.error || 'Token is invalid or expired',
+      //   tokenLength: token.length,
+      // });
       
       logger.warn('Token verification failed', {
         requestId,
