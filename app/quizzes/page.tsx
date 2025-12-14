@@ -17,38 +17,48 @@ interface Category {
   icon?: string;
 }
 
-interface CategoryTree {
-  parent: Category;
-  children: Category[];
-}
-
 export default function QuizzesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [quizzes, setQuizzes] = useState<any[]>([]);
   const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filteredQuizzes, setFilteredQuizzes] = useState<any[]>([]);
 
-  // Flatten categories into tree structure
-  const categoryTree = useMemo(() => {
-    const parents = categories.filter(cat => cat.parentId === null);
-    return parents.map(parent => ({
-      parent,
-      children: categories.filter(cat => cat.parentId === parent._id)
-    }));
-  }, [categories]);
+  // Calculate quiz count for each category
+  const categoriesWithCount = categories.map(cat => {
+    let count = 0;
+    
+    if (cat.parentId === null) {
+      // For parent categories, count quizzes from all child categories
+      const childCats = categories.filter(c => c.parentId === cat._id);
+      if (childCats.length > 0) {
+        const childIds = childCats.map(c => c._id);
+        count = quizzes.filter(q => {
+          const qCatId = q.categoryId || (typeof q.category === 'string' ? q.category : q.category?._id);
+          return childIds.includes(qCatId);
+        }).length;
+      } else {
+        // Parent without children - count directly
+        count = quizzes.filter(q => {
+          const qCatId = q.categoryId || (typeof q.category === 'string' ? q.category : q.category?._id);
+          return qCatId === cat._id;
+        }).length;
+      }
+    } else {
+      // For child categories, count directly
+      count = quizzes.filter(q => {
+        const qCatId = q.categoryId || (typeof q.category === 'string' ? q.category : q.category?._id);
+        return qCatId === cat._id;
+      }).length;
+    }
+    
+    return { ...cat, quizCount: count };
+  });
 
-  const parentCategories = useMemo(() => 
-    categoryTree.map(tree => tree.parent), 
-    [categoryTree]
-  );
-
-  const childCategories = useMemo(() => {
-    if (!selectedParentId) return [];
-    const tree = categoryTree.find(t => t.parent._id === selectedParentId);
-    return tree ? tree.children : [];
-  }, [categoryTree, selectedParentId]);
+  // Get child categories when parent is selected
+  const childCategories = selectedParentId
+    ? categoriesWithCount.filter(cat => cat.parentId === selectedParentId)
+    : [];
 
   useEffect(() => {
     async function fetchData() {
@@ -85,31 +95,35 @@ export default function QuizzesPage() {
     fetchData();
   }, []);
 
-  // Debug log
-  console.log('Category Tree:', categoryTree);
-  console.log('Selected Parent ID:', selectedParentId);
-  console.log('Child Categories:', childCategories);
-
-  // Get child IDs for filtering
-  const childIds = selectedParentId ? childCategories.map(c => c._id) : [];
-
   // Filter quizzes based on selected category
-  useEffect(() => {
-    let result = quizzes;
-    if (selectedChildId) {
-      result = quizzes.filter(q => {
-        const catId = typeof q.categoryId === 'string' ? q.categoryId : q.categoryId?._id;
-        return catId === selectedChildId;
-      });
-    } else if (selectedParentId && childIds.length > 0) {
-      // Show quizzes from all children of selected parent
-      result = quizzes.filter(q => {
-        const catId = typeof q.categoryId === 'string' ? q.categoryId : q.categoryId?._id;
-        return childIds.includes(catId);
-      });
+  let filteredQuizzes = quizzes;
+  if (selectedChildId) {
+    // Filter by specific child category
+    filteredQuizzes = quizzes.filter(q => {
+      const catId = q.categoryId || (typeof q.category === 'string' ? q.category : q.category?._id);
+      return catId === selectedChildId;
+    });
+  } else if (selectedParentId) {
+    // Filter by parent category - include all children
+    const parentCat = categories.find(p => p._id === selectedParentId);
+    
+    if (parentCat) {
+      const childCats = categories.filter(cat => cat.parentId === parentCat._id);
+      
+      if (childCats.length > 0) {
+        const childIds = childCats.map(c => c._id);
+        filteredQuizzes = quizzes.filter(q => {
+          const catId = q.categoryId || (typeof q.category === 'string' ? q.category : q.category?._id);
+          return childIds.includes(catId);
+        });
+      } else {
+        filteredQuizzes = quizzes.filter(q => {
+          const catId = q.categoryId || (typeof q.category === 'string' ? q.category : q.category?._id);
+          return catId === selectedParentId;
+        });
+      }
     }
-    setFilteredQuizzes(result);
-  }, [quizzes, selectedParentId, selectedChildId, childIds]);
+  }
 
   const handleParentSelect = (parentId: string | null) => {
     setSelectedParentId(parentId);
@@ -128,52 +142,44 @@ export default function QuizzesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
-      <main className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
-        <div className="mb-6 text-sm">
-          <Link href="/" className="text-indigo-600 hover:text-indigo-700">
-            Trang chủ
-          </Link>
-          <span className="mx-2 text-gray-500">/</span>
-          <span className="text-gray-600">Bài thi</span>
-        </div>
-
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">
-          📋 Danh sách bài thi
-        </h1>
 
       {/* Category Navigation */}
-        <CategoryNav 
-          parentCategories={parentCategories}
-          selectedParentId={selectedParentId}
-          selectedCategoryId={selectedChildId}
-          childCategories={childCategories}
-          onParentSelect={handleParentSelect}
-          onChildSelect={handleChildSelect}
-          onShowAll={handleShowAll}
-          totalQuizCount={quizzes.length}
-        />
+      <CategoryNav 
+        parentCategories={categoriesWithCount.filter(cat => cat.parentId === null)}
+        selectedParentId={selectedParentId}
+        selectedCategoryId={selectedChildId}
+        childCategories={childCategories}
+        onParentSelect={handleParentSelect}
+        onChildSelect={handleChildSelect}
+        onShowAll={handleShowAll}
+        totalQuizCount={quizzes.length}
+      />
 
-        {/* Quiz Grid */}
+      {/* Main Content - Quiz Cards Grid */}
+      <div className="container mx-auto px-4 py-6">
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-gray-600">Đang tải...</p>
+            <p className="text-gray-600 text-lg">Đang tải bài thi...</p>
           </div>
         ) : filteredQuizzes.length === 0 ? (
-          <div className="bg-white rounded-lg p-12 text-center border border-gray-200">
-            <p className="text-gray-600 text-lg">Không có bài thi nào</p>
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">📝</div>
+            <p className="text-gray-600 text-lg">Chưa có bài thi nào trong danh mục này</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredQuizzes.map((quiz, index) => {
-              // Ensure unique key: use _id if available and unique, fallback to slug or index
-              const key = quiz._id || quiz.slug || `quiz-${index}`;
-              return <QuizCard key={key} quiz={quiz} />;
-            })}
-          </div>
+          <>
+            <div className="mb-4 text-sm text-gray-600">
+              Hiển thị <span className="font-semibold">{filteredQuizzes.length}</span> bài thi
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+              {filteredQuizzes.map((quiz, index) => {
+                const key = quiz._id || quiz.slug || `quiz-${index}`;
+                return <QuizCard key={key} quiz={quiz} />;
+              })}
+            </div>
+          </>
         )}
-      </main>
+      </div>
     </div>
   );
 }
